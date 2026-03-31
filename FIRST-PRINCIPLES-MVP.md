@@ -67,7 +67,7 @@
 | 思维导图 | Mermaid.js 或 D3.js | 前端渲染交互式脑图 |
 | 部署 | Cloudflare Pages | 免费 + 全球 CDN + 自动 HTTPS |
 | 后端 | Cloudflare Workers | API 代理 + 大模型调用 |
-| LLM | OpenAI API (GPT-4o) | 思维引导核心引擎 |
+| LLM | DeepSeek Chat (主) / GLM-5-Turbo (备) | 思维引导核心引擎 |
 | 认证 | Cloudflare Zero Trust | 简单邮箱/社交登录 |
 | 数据库 | Cloudflare D1 (SQLite) | 对话历史存储 |
 
@@ -88,7 +88,7 @@
 │  Worker      │
 │             ├──→ 解析用户问题，判断是否触发 first-principles skill
 │             ├──→ 组装 system prompt (注入 SKILL.md 引导规则)
-│             ├──→ 调用 OpenAI API (GPT-4o)
+│             ├──→ 调用 DeepSeek Chat (主) / GLM-5-Turbo (备)
 │             ├──→ 接收 AI 回复，流式输出给前端
 │             └──→ 对话结束 → 生成脑图 → 存入 D1
 └──────┬──────┘
@@ -111,7 +111,7 @@ Request:
     { "role": "system", "content": "[SKILL.md 内容]" },
     { "role": "user", "content": "用户输入的问题" }
   ],
-  "model": "gpt-4o",
+  "model": "deepseek-chat",
   "stream": true
 }
 
@@ -234,27 +234,27 @@ CREATE TABLE mindmaps (
 | 方案 | 价格 | 说明 |
 |------|------|------|
 | 免费体验 | $0 | 每人 3 次 AI 对话 + 1 次脑图 |
+| 按次付费 | $1/次 | 超出免费次数后，每次对话 $1 |
 | Pro | $9/月 | 无限对话 + 脑图 + 历史回顾 |
-| 一次性 | $5/次 | 单次深度分析（Pro 内的额外能力） |
 
 ### 7.2 收入预估（月活 1000 人）
 
 | 来源 | 收入 |
 |------|------|
-| Pro 订阅 (200 人) | $1,800 |
-| 一次性 (100 人 × $5) | $500 |
-| **月收入** | **$2,300** |
+| Pro 订阅 (100 人) | $900 |
+| 按次付费 (200 人 × 10 次/月) | $200 |
+| **月收入** | **$1,100** |
 
 ### 7.3 成本估算
 
 | 项目 | 月成本 |
 |------|------|
 | Cloudflare Pages + Workers + D1 | ~$0 (免费额度内) |
-| OpenAI API (GPT-4o) | ~$500-800 |
+| DeepSeek Chat (主) / GLM-5-Turbo (备) | ~$100-300 |
 | 域名 | ~$1/月 |
-| **月成本** | **~$501-801** |
+| **月成本** | **~$101-301** |
 
-**首月成本 < $800 即可启动。**
+**首月成本 < $300 即可启动。**
 
 ---
 
@@ -321,7 +321,7 @@ CREATE TABLE mindmaps (
 | 部署 | Cloudflare Pages | 免费额度足够，全球 CDN，开发者体验好 |
 | API 层 | Cloudflare Workers | 与 Pages 同生态，延迟低，免费额度高 |
 | 数据库 | Cloudflare D1 | SQLite 兼容，免费，与 Workers 无缝集成 |
-| LLM | OpenAI GPT-4o | 深度推理能力最强，适合复杂引导 |
+| LLM | DeepSeek Chat 性价比高，中文能力出色 |
 | 脑图 | Mermaid.js | 轻量，前端渲染，用户可直接交互 |
 | 认证 | Cloudflare Zero Trust | 零代码实现，邮箱登录即可 |
 
