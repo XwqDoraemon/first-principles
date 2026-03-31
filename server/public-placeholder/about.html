@@ -1,94 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>About — First Principles</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: #fafafa; color: #171717; -webkit-font-smoothing: antialiased; line-height: 1.6; }
-    .font-serif { font-family: 'Playfair Display', Georgia, serif; }
-    a { color: inherit; text-decoration: none; }
-
-    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid #e5e5e5; height: 56px; }
-    .nav-inner { max-width: 896px; margin: 0 auto; padding: 0 1.5rem; height: 100%; display: flex; align-items: center; justify-content: space-between; }
-    .nav-brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem; }
-    .nav-links a { font-size: 0.875rem; font-weight: 500; color: #737373; margin-left: 1.5rem; transition: color 0.2s; }
-    .nav-links a:hover { color: #0284c7; }
-
-    .container { max-width: 720px; margin: 0 auto; padding: 5rem 1.5rem 4rem; }
-
-    .hero { text-align: center; margin-bottom: 3rem; }
-    .hero .emoji { font-size: 3rem; margin-bottom: 1rem; }
-    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .hero .subtitle { font-size: 1.125rem; color: #737373; font-style: italic; }
-
-    h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; margin-top: 2.5rem; }
-    p { color: #525252; margin-bottom: 1rem; line-height: 1.7; }
-    .highlight { color: #0284c7; font-weight: 500; }
-
-    .steps { display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; }
-    .step { display: flex; align-items: flex-start; gap: 0.75rem; background: #fff; border: 1px solid #e5e5e5; border-radius: 1rem; padding: 1.25rem; }
-    .step .num { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; }
-    .step .text h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .step .text p { font-size: 0.875rem; color: #737373; margin: 0; }
-
-    .pricing { display: flex; flex-direction: column; gap: 0.75rem; margin: 1rem 0; }
-    .price-item { display: flex; align-items: center; gap: 0.75rem; background: #fff; border: 1px solid #e5e5e5; border-radius: 1rem; padding: 1rem 1.25rem; }
-    .price-item .icon { font-size: 1.5rem; flex-shrink: 0; }
-    .price-item .label { font-weight: 500; }
-    .price-item .desc { font-size: 0.875rem; color: #737373; }
-
-    .cta { text-align: center; margin-top: 3rem; }
-    .cta a { display: inline-flex; align-items: center; gap: 0.5rem; background: #171717; color: #fff; font-weight: 600; padding: 0.875rem 2rem; border-radius: 9999px; transition: all 0.2s; }
-    .cta a:hover { background: #262626; transform: translateY(-1px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — First Principles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:#0A0A0B;color:#E8E6DF;min-height:100vh;}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:0.5px solid rgba(255,255,255,0.08);background:rgba(10,10,11,0.95);backdrop-filter:blur(12px);height:56px;}
+  .logo{font-family:'Lora',serif;font-size:18px;color:#F0EDE4;text-decoration:none;}
+  .logo span{color:#B8A98A;font-style:italic;}
+  .nav-link{text-decoration:none;color:rgba(232,230,223,0.5);font-size:13px;transition:color 0.2s;cursor:pointer;}
+  .nav-link:hover{color:#E8E6DF;}
+  .container{max-width:680px;margin:0 auto;padding:60px 24px 80px;}
+  .hero{text-align:center;margin-bottom:48px;}
+  .hero .emoji{font-size:40px;margin-bottom:12px;}
+  .hero h1{font-family:'Lora',serif;font-size:32px;font-weight:400;color:#F0EDE4;margin-bottom:8px;letter-spacing:-0.5px;}
+  .hero .subtitle{font-size:16px;color:rgba(232,230,223,0.4);font-style:italic;font-family:'Lora',serif;}
+  h2{font-family:'Lora',serif;font-size:22px;font-weight:400;color:#F0EDE4;margin-bottom:16px;margin-top:40px;}
+  p{color:rgba(232,230,223,0.55);line-height:1.75;margin-bottom:12px;font-size:14px;}
+  .hl{color:#B8A98A;}
+  .steps{display:flex;flex-direction:column;gap:12px;margin:20px 0;}
+  .step{display:flex;align-items:flex-start;gap:14px;background:rgba(255,255,255,0.02);border:0.5px solid rgba(255,255,255,0.06);border-radius:12px;padding:18px 20px;}
+  .step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#B8A98A,#a09070);color:#0A0A0B;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .step-text h3{font-size:14px;font-weight:500;color:rgba(232,230,223,0.85);margin-bottom:3px;}
+  .step-text p{font-size:13px;color:rgba(232,230,223,0.4);margin:0;}
+  .pricing{display:flex;flex-direction:column;gap:10px;margin:16px 0;}
+  .price-item{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.02);border:0.5px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;}
+  .price-icon{font-size:20px;flex-shrink:0;}
+  .price-label{font-weight:500;font-size:14px;color:rgba(232,230,223,0.85);}
+  .price-desc{font-size:12px;color:rgba(232,230,223,0.35);}
+  .cta{text-align:center;margin-top:48px;}
+  .cta a{display:inline-flex;align-items:center;gap:8px;background:#B8A98A;color:#0A0A0B;font-weight:500;padding:14px 32px;border-radius:28px;text-decoration:none;font-size:14px;transition:opacity 0.2s;font-family:'DM Sans',sans-serif;}
+  .cta a:hover{opacity:0.82;}
+  .divider{border:none;border-top:0.5px solid rgba(255,255,255,0.06);margin:40px 0;}
+</style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="nav-inner">
-      <a href="/" class="nav-brand"><span style="font-size:1.25rem">🧠</span> First Principles</a>
-      <div class="nav-links">
-        <a href="/history">History</a>
-      </div>
-    </div>
-  </nav>
-
-  <div class="container">
-    <div class="hero">
-      <p class="emoji">🧠</p>
-      <h1>Think from first principles.</h1>
-      <p class="subtitle font-serif">AI-guided thinking for life's hard questions.</p>
-    </div>
-
-    <h2>What is first principles thinking?</h2>
-    <p>When you face a tough decision, your brain takes shortcuts — it assumes, judges, and generalizes based on past experience. <span class="highlight">First principles thinking</span> means stripping away those assumptions and reasoning from the ground up.</p>
-    <p>This approach is used by Elon Musk, Jeff Bezos, and top scientists. It's backed by research in behavioral economics, the Socratic method, and cognitive behavioral therapy.</p>
-
-    <h2>How to use First Principles</h2>
-    <div class="steps">
-      <div class="step"><div class="num">1</div><div class="text"><h3>Type your problem</h3><p>Any question, dilemma, or decision — personal, career, relationship, or business.</p></div></div>
-      <div class="step"><div class="num">2</div><div class="text"><h3>Answer the AI's questions</h3><p>The AI asks one question at a time — about assumptions, root causes, and possible solutions.</p></div></div>
-      <div class="step"><div class="num">3</div><div class="text"><h3>Get your mind map</h3><p>At the end, you'll receive an interactive mind map of your entire thinking journey.</p></div></div>
-    </div>
-
-    <h2>Why not just use ChatGPT?</h2>
-    <p>ChatGPT gives you <span class="highlight">answers</span>. First Principles gives you a <span class="highlight">thinking process</span>.</p>
-    <p>We use a structured 5-phase Socratic framework (based on cognitive behavioral therapy, behavioral economics, and philosophy research) to guide you step by step. The insight you reach is <em>yours</em> — not borrowed from an AI.</p>
-
-    <h2>Pricing</h2>
-    <div class="pricing">
-      <div class="price-item"><span class="icon">🆓</span><div><div class="label">Free — 3 conversations</div><div class="desc">Experience the full framework, no strings attached.</div></div></div>
-      <div class="price-item"><span class="icon">💰</span><div><div class="label">$1 per conversation</div><div class="desc">After your free sessions, pay per use.</div></div></div>
-      <div class="price-item"><span class="icon">⭐</span><div><div class="label">Pro — $9/month</div><div class="desc">Unlimited conversations + mind maps + history.</div></div></div>
-    </div>
-
-    <div class="cta">
-      <a href="/">Start Thinking →</a>
-    </div>
+<nav>
+  <a href="/" class="logo">First <span>Principles</span></a>
+  <div><a class="nav-link" href="/history">History</a></div>
+</nav>
+<div class="container">
+  <div class="hero">
+    <div class="emoji">🧠</div>
+    <h1>Think from first principles.</h1>
+    <p class="subtitle">AI-guided thinking for life's hard questions.</p>
   </div>
+
+  <h2>What is first principles thinking?</h2>
+  <p>When you face a tough decision, your brain takes shortcuts — it assumes, judges, and generalizes based on past experience. <span class="hl">First principles thinking</span> means stripping away those assumptions and reasoning from the ground up.</p>
+  <p>This approach is used by Elon Musk, Jeff Bezos, and top scientists. It's backed by research in behavioral economics, the Socratic method, and cognitive behavioral therapy.</p>
+
+  <h2>How to use First Principles</h2>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-text"><h3>Type your problem</h3><p>Any question, dilemma, or decision — personal, career, relationship, or business.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text"><h3>Answer the AI's questions</h3><p>The AI asks one question at a time — about assumptions, root causes, and possible solutions.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text"><h3>Get your mind map</h3><p>At the end, you'll receive a visual summary of your entire thinking journey.</p></div></div>
+  </div>
+
+  <hr class="divider">
+
+  <h2>Why not just use ChatGPT?</h2>
+  <p>ChatGPT gives you <span class="hl">answers</span>. First Principles gives you a <span class="hl">thinking process</span>.</p>
+  <p>We use a structured 5-phase Socratic framework to guide you step by step. The insight you reach is <em>yours</em> — not borrowed from an AI.</p>
+
+  <hr class="divider">
+
+  <h2>Pricing</h2>
+  <div class="pricing">
+    <div class="price-item"><span class="price-icon">🆓</span><div><div class="price-label">Free — 3 conversations</div><div class="price-desc">Experience the full framework, no strings attached.</div></div></div>
+    <div class="price-item"><span class="price-icon">💰</span><div><div class="price-label">$1 per conversation</div><div class="price-desc">After your free sessions, pay per use.</div></div></div>
+    <div class="price-item"><span class="price-icon">⭐</span><div><div class="price-label">Pro — $9/month</div><div class="price-desc">Unlimited conversations + mind maps + history.</div></div></div>
+  </div>
+
+  <div class="cta"><a href="/chat/new">Start Thinking →</a></div>
+</div>
 </body>
 </html>
