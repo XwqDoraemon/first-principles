@@ -1,0 +1,24 @@
+---
+interface Props {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  emoji?: string;
+  href?: string;
+}
+
+const { title, subtitle, description, emoji, href = '#' } = Astro.props;
+
+export default function Card({ title, subtitle, description, emoji, href }: Props) {
+  return (
+    <a
+      href={href}
+      class="group block p-6 rounded-2xl border border-neutral-200 hover:border-sky-300 hover:shadow-sm transition-all duration-300 h-full"
+    >
+      {emoji && <span class="text-3xl block mb-3">{emoji}</span>}
+      <h3 class="font-semibold text-neutral-900 text-lg mb-1">{title}</h3>
+      {subtitle && <p class="text-sm text-neutral-500">{subtitle}</p>}
+      {description && <p class="text-sm text-neutral-600 mt-2 leading-relaxed">{description}</p>}
+    </a>
+  );
+}

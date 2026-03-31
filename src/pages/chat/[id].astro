@@ -1,0 +1,305 @@
+---
+interface Props {
+  messages: Array<{ role: string; content: string; timestamp?: string }>;
+  conversationId?: string;
+  onNewMessage?: (content: string) => void;
+}
+
+import { useState } from 'react';
+import Card from '../components/Card.astro';
+
+const { title = props.conversationId ? props.messages[props.messages.length - 1]?.content?.slice(0, 60) : 'New Conversation';
+
+function formatDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+---
+
+<div class="h-screen flex flex-col">
+  <Nav />
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+    {/* Messages area */}
+    <div id="messages" class="flex-1 overflow-y-auto px-4 sm:px-6 py-20 pb-36">
+      {props.messages.length === 0 ? (
+        <div class="flex-1 flex items-center justify-center">
+          <div class="text-center">
+            <p class="text-4xl mb-4">🧠</p>
+            <h1 class="text-2xl font-bold text-neutral-900 mb-2">Think from first principles.</h1>
+            <p class="text-neutral-500 mb-8 max-w-sm text-lg">AI-guided thinking for life's hard questions.</p>
+            <button
+              id="start-btn"
+              onclick="document.getElementById('chat-input').focus()"
+              class="bg-neutral-900 hover:bg-neutral-800 text-white font-semibold px-6 py-3 rounded-full transition-colors hover:shadow-lg"
+            >
+              Start Guided Thinking →
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div class="max-w-2xl mx-auto space-y-4">
+          {props.messages.map((msg, i) => (
+            <div
+              class={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 mb-4`}
+            >
+              <div
+                class={`inline-flex items-start gap-2 px-4 py-2 rounded-2xl text-sm max-w-[85%] ${
+                  msg.role === 'user'
+                    ? 'bg-neutral-100'
+                    : 'bg-gradient-to-br from-sky-100 to-blue-50'
+                } shadow-sm`}
+              >
+                {msg.role === 'user' ? 'You:' : 'FP:'}
+              </div>
+              <div class={`text-sm ${msg.role === 'user' ? 'text-neutral-800' : 'text-neutral-700'} leading-relaxed whitespace-pre-wrap`}>
+                {msg.content}
+              </div>
+            </div>
+            <div class="text-xs text-neutral-400 text-right mt-1 w-20">
+              {msg.timestamp && formatDate(msg.timestamp)}
+            </div>
+          ))}
+          {/* Invisible scroll anchor */}
+          <div id="scroll-anchor" class="h-px"></div>
+        </div>
+      )}
+
+      {/* Chat input (fixed bottom) */}
+      <div class="border-t border-neutral-200 bg-white/95 backdrop-blur-md px-4 sm:px-6 py-4 pb-36 sticky bottom-0 left-0 right-0 sm:inset-x-4 sm:inset-x-0">
+        <form id="chat-form" class="flex gap-2 max-w-2xl mx-auto">
+          <textarea
+            id="chat-input"
+            name="message"
+            placeholder="What's on your mind?"
+            rows="3"
+            class="w-full resize-none rounded-xl border border-neutral-300 bg-white px-4 py-3 text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-500 transition-colors"
+          ></textarea>
+          <button
+            type="submit"
+            class="bg-neutral-900 hover:bg-neutral-800 text-white font-semibold px-5 py-2.5 rounded-full transition-colors hover:shadow-lg disabled:opacity-50 disabled:hover:opacity-100 cursor-not-allowed flex-shrink-0"
+            id="send-btn"
+          >
+            Send →
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Mobile sidebar overlay (hidden by default) -->
+    <div id="sidebar" class="fixed inset-0 bg-white/95 backdrop-blur-md z-50 transform translate-x-full transition-transform duration-300 pointer-events-none -translate-x-full">
+      <div class="flex items-center justify-between p-4 border-b border-neutral-200">
+        <h2 class="font-semibold text-neutral-800">History</h2>
+        <button onclick="closeSidebar()" class="text-neutral-500 hover:text-neutral-800 text-lg leading-none">&times;</button>
+      </div>
+      <div id="sidebar-list" class="p-4 overflow-y-auto max-h-[calc(100vh-80px)]">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .whitespace-pre-wrap {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+</style>
+
+<script>
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  const messagesDiv = document.getElementById('messages');
+  const scrollAnchor = document.getElementById('scroll-anchor');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarList = document.getElementById('sidebar-list');
+
+  // Close sidebar
+  window.closeSidebar = () => {
+    sidebar.classList.add('translate-x-full');
+    sidebar.classList.remove('translate-x-full');
+    document.body.style.overflow = '';
+  };
+
+  // Open sidebar on mobile
+  const openSidebar = () => {
+    sidebar.classList.remove('translate-x-full');
+    document.body.style.overflow = 'hidden';
+  };
+
+  // Send message
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const content = chatInput.value.trim();
+    if (!content) return;
+
+    chatInput.value = '';
+    chatInput.style.height = '60px';
+    sendBtn.textContent = 'Thinking…';
+    sendBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages, conversationId: props.conversationId }),
+      });
+
+      if (!res.ok) {
+        chatInput.style.height = '60px';
+        sendBtn.textContent = 'Send →';
+        sendBtn.disabled = false;
+        return;
+      }
+
+      // Read SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let newConversationId = props.conversationId;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        if (value.startsWith('data: ')) {
+          const chunk = value.slice(6).trim();
+          if (chunk === '[DONE]') break;
+          assistantContent += chunk;
+          // Append AI message to DOM
+          appendMessage('assistant', assistantContent);
+          continue;
+        }
+
+        if (value.startsWith('data: ')) {
+          assistantContent += value.slice(6);
+        }
+      }
+
+      // Parse conversation ID from response
+      try {
+        const lines = assistantContent.split('\n').filter(l => l.startsWith('conversation_id:'));
+        if (lines.length > 0) {
+          newConversationId = lines[0].split(': ')[1]?.trim();
+        }
+      } catch (e) {}
+
+      // Update conversationId if new
+      if (newConversationId) {
+        props.conversationId = newConversationId;
+      }
+
+      // Scroll to bottom
+      scrollAnchor.scrollIntoView({ behavior: 'smooth' });
+
+      // Update history
+      await updateHistory();
+
+    } finally {
+        chatInput.style.height = '60px';
+        sendBtn.textContent = 'Send →';
+        sendBtn.disabled = false;
+      }
+    });
+
+  // Function to append message to DOM
+  function appendMessage(role, content) {
+    const div = document.createElement('div');
+    div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} gap-3 mb-4`;
+    const inner = document.createElement('div');
+    inner.className = `inline-flex items-start gap-2 px-4 py-2.5 rounded-2xl text-sm max-w-[85%] ${
+      role === 'user'
+        ? 'bg-neutral-100'
+        : 'bg-gradient-to-br from-sky-100 to-blue-50'
+    } shadow-sm`;
+
+    const prefix = document.createElement('span');
+    prefix.className = `flex-shrink-0 w-5 h-5 flex items-center justify-center text-lg ${role === 'user' ? 'text-neutral-800' : 'text-white'}`;
+    prefix.textContent = role === 'user' ? 'You:' : 'FP:';
+
+    const bubble = document.createElement('div');
+    bubble.className = `text-sm ${role === 'user' ? 'text-neutral-800' : 'text-neutral-700'} leading-relaxed whitespace-pre-wrap`;
+    bubble.textContent = content;
+
+    inner.appendChild(prefix);
+    inner.appendChild(bubble);
+
+    div.appendChild(inner);
+    messagesDiv.appendChild(div);
+
+    requestAnimationFrame(() => {
+      scrollAnchor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+
+  // Function to update sidebar history
+  async function updateHistory() {
+    if (!sidebarList) return;
+
+    try {
+      const res = await fetch('/api/conversations');
+      const conversations = await res.json();
+
+      sidebarList.innerHTML = conversations.length === 0
+        ? '<p class="text-sm text-neutral-500 text-center py-4">No conversations yet.</p>'
+        : conversations.map((c: any) => `
+          <a href="/chat/${c.id}" onclick="closeSidebar()" class="block p-3 rounded-xl border border-neutral-200 hover:border-sky-300 hover:shadow-sm transition-all mb-2 cursor-pointer">
+            <p class="text-sm font-medium text-neutral-800 truncate">${c.title}</p>
+            <p class="text-xs text-neutral-400">${c.msg_count} messages · ${new Date(c.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+          </a>
+        `).join('');
+    } catch {
+      sidebarList.innerHTML = '<p class="text-sm text-red-500">Failed to load history.</p>';
+    }
+  }
+
+  // Load history on page load
+  async function loadHistory() {
+    if (props.conversationId) {
+      await updateHistory();
+    } else {
+      await updateHistory();
+    }
+  }
+
+  // Load conversation on mount
+  loadHistory();
+
+  // Handle URL-based navigation (history back button)
+  async function loadConversation(id) {
+    sidebar.classList.remove('translate-x-full');
+    document.body.style.overflow = 'hidden';
+
+    try {
+      const res = await fetch(`/api/conversations/${id}`);
+      const conv = await res.json();
+
+      // Set global state for new messages
+      window.__convId = id;
+      window.__convTitle = conv.title;
+
+      // Clear messages
+      messagesDiv.innerHTML = '';
+
+      // Render messages
+      if (conv && conv.messages) {
+        conv.messages.forEach((m: any) => appendMessage(m.role, m.content));
+
+        // Scroll to bottom
+        requestAnimationFrame(() => {
+          scrollAnchor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      }
+
+      // Update history
+      await updateHistory();
+    } catch (e) {
+        messagesDiv.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load conversation.</p>';
+    }
+
+  // Global function for navigation
+  window.loadConversation = loadConversation;
+</script>

@@ -1,17 +1,96 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Card from '../components/Card.astro';
+
+const cards = [
+  { emoji: '🎯', title: 'State your real problem', subtitle: 'Find what you actually care about.', desc: 'The AI asks one question to find what you actually care about.' },
+  { emoji: '🔍', title: 'Break your assumptions', subtitle: 'The AI challenges your "obvious" assumptions.', desc: 'Structured questions reveal hidden premises you didn\'t know you had.' },
+  { emoji: '🧠', title: 'Reach the root cause', subtitle: '5 Why tracing to the real problem.', desc: 'Strip away layers until only the fundamental fact remains.' },
+  { emoji: '💡', title: 'Rebuild from scratch', subtitle: 'Start from root facts, not compromises.', desc: 'From the ground up, construct your own solution.' },
+  { emoji: '✅', title: 'Validate & act', subtitle: 'Check blind spots and set a first step.', desc: 'Test your new plan, identify risks, commit to action.' },
+  { emoji: '🗺️', title: 'Get your mind map', subtitle: 'Visual summary of the journey.', desc: 'Interactive mindmap of assumptions broken, insights found, and action plan.' },
+];
+
+const howItWorks = 'When you type a question, the AI guides you through 5 phases with one question at a time — no answers, only questions. At the end, you get an interactive mind map.';
+
+const differences = [
+  { other: 'ChatGPT, Claude, Perplexity', here: 'Not answers — guided thinking.' },
+  { other: 'Generic advice', here: 'Structured five-phase framework + visual output.' },
+  { other: 'One-size-fits-all', here: 'Question → Assumption → Root → Rebuild → Verify.' },
+];
 
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="First Principles — Free AI Thinking Tool">
+  <Nav />
+  <div class="relative overflow-hidden">
+    <!-- Background decoration -->
+    <div class="absolute inset-0 -z-10">
+      <div class="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-br from-sky-100/30 via-blue-200/60 to-purple-300/60 opacity-30 blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-4xl mx-auto px-4 sm:px-6 py-24 sm:py-36">
+      <!-- Hero -->
+      <div class="text-center mb-16 relative z-10">
+        <p class="text-5xl mb-4">🧠</p>
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-bold text-neutral-900 mb-3">
+          Think from <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-blue-600">first principles</span>.
+        </h1>
+        <p class="text-lg sm:text-xl text-neutral-500 font-serif italic max-w-xl mx-auto mb-8">
+          AI-guided thinking for life's hard questions.
+        </p>
+        <a
+          href="#start-section"
+          class="inline-flex items-center gap-2 bg-white hover:bg-neutral-50 text-neutral-900 font-semibold px-8 py-3.5 rounded-full transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 border border-neutral-200"
+        >
+          Start Guided Thinking →
+        </a>
+      </div>
+
+      <!-- Start section -->
+      <section id="start-section" class="scroll-mt-20">
+        <div class="text-center mb-10">
+          <p class="text-sm uppercase tracking-wider text-neutral-400 font-semibold mb-6">How It Works</p>
+          <p class="text-neutral-600 max-w-xl mx-auto">{howItWorks}</p>
+        </div>
+      </section>
+
+      <!-- Cards grid -->
+      <section class="scroll-mt-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {cards.map((card) => (
+            <Card {...card} />
+          ))}
+        </div>
+      </section>
+
+      <!-- Differences -->
+      <section class="scroll-mt-16">
+        <div class="text-center mb-8">
+          <p class="text-sm uppercase tracking-wider text-neutral-400 font-semibold mb-6">Why Us, Not Others?</p>
+        </div>
+        <div class="space-y-4 max-w-xl mx-auto">
+          {differences.map((d: any, i: number) => (
+            <div class="flex items-start gap-3">
+              <span class="text-2xl font-bold text-sky-600">{d.emoji}</span>
+              <div>
+                <p class="font-medium text-neutral-800">{d.other}</p>
+                <p class="text-sm text-neutral-600">{d.here}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="scroll-mt-16 text-center">
+        <a
+          href="/#start-section"
+          class="inline-flex items-center gap-2 bg-white hover:bg-neutral-50 text-neutral-900 font-semibold px-8 py-3.5 rounded-full border border-neutral-200 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+        >
+          Get Started →
+        </a>
+      </section>
+    </div>
+  </Layout>
