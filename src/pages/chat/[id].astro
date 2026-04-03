@@ -136,20 +136,35 @@ function formatDate(ts) {
     const content = chatInput.value.trim();
     if (!content) return;
 
+    // Add user message to UI immediately
+    appendMessage('user', content);
+    
     chatInput.value = '';
     chatInput.style.height = '60px';
     sendBtn.textContent = 'Thinking…';
     sendBtn.disabled = true;
 
     try {
+      // Get current messages
+      const currentMessages = Array.from(messagesDiv.querySelectorAll('.message-bubble')).map(el => ({
+        role: el.classList.contains('user-message') ? 'user' : 'assistant',
+        content: el.textContent
+      }));
+      
+      // Add the new user message
+      const messagesToSend = [...currentMessages, { role: 'user', content }];
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, conversationId: props.conversationId }),
+        body: JSON.stringify({ 
+          messages: messagesToSend, 
+          conversationId: props.conversationId 
+        }),
       });
 
       if (!res.ok) {
-        chatInput.style.height = '60px';
+        console.error('API error:', res.status);
         sendBtn.textContent = 'Send →';
         sendBtn.disabled = false;
         return;
@@ -165,31 +180,34 @@ function formatDate(ts) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        if (value.startsWith('data: ')) {
-          const chunk = value.slice(6).trim();
-          if (chunk === '[DONE]') break;
-          assistantContent += chunk;
-          // Append AI message to DOM
-          appendMessage('assistant', assistantContent);
-          continue;
-        }
-
-        if (value.startsWith('data: ')) {
-          assistantContent += value.slice(6);
+        const chunk = decoder.decode(value);
+        if (chunk.startsWith('data: ')) {
+          const data = chunk.slice(6).trim();
+          if (data === '[DONE]') break;
+          
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              assistantContent += parsed.content;
+              // Update the assistant message in real-time
+              updateAssistantMessage(assistantContent);
+            }
+            if (parsed.conversation_id) {
+              newConversationId = parsed.conversation_id;
+            }
+          } catch (e) {
+            // If not JSON, treat as plain text
+            assistantContent += data;
+            updateAssistantMessage(assistantContent);
+          }
         }
       }
 
-      // Parse conversation ID from response
-      try {
-        const lines = assistantContent.split('\n').filter(l => l.startsWith('conversation_id:'));
-        if (lines.length > 0) {
-          newConversationId = lines[0].split(': ')[1]?.trim();
-        }
-      } catch (e) {}
-
       // Update conversationId if new
-      if (newConversationId) {
+      if (newConversationId && newConversationId !== props.conversationId) {
         props.conversationId = newConversationId;
+        // Update URL without page reload
+        window.history.replaceState({}, '', `/chat/${newConversationId}`);
       }
 
       // Scroll to bottom
@@ -198,30 +216,34 @@ function formatDate(ts) {
       // Update history
       await updateHistory();
 
+    } catch (error) {
+      console.error('Send error:', error);
+      appendMessage('assistant', 'Sorry, there was an error processing your message. Please try again.');
     } finally {
-        chatInput.style.height = '60px';
-        sendBtn.textContent = 'Send →';
-        sendBtn.disabled = false;
-      }
-    });
+      sendBtn.textContent = 'Send →';
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+  });
 
   // Function to append message to DOM
   function appendMessage(role, content) {
     const div = document.createElement('div');
-    div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} gap-3 mb-4`;
+    div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} gap-3 mb-4 message-container`;
+    
     const inner = document.createElement('div');
     inner.className = `inline-flex items-start gap-2 px-4 py-2.5 rounded-2xl text-sm max-w-[85%] ${
       role === 'user'
-        ? 'bg-neutral-100'
-        : 'bg-gradient-to-br from-sky-100 to-blue-50'
-    } shadow-sm`;
+        ? 'bg-neutral-100 user-message'
+        : 'bg-gradient-to-br from-sky-100 to-blue-50 assistant-message'
+    } shadow-sm message-bubble`;
 
     const prefix = document.createElement('span');
     prefix.className = `flex-shrink-0 w-5 h-5 flex items-center justify-center text-lg ${role === 'user' ? 'text-neutral-800' : 'text-white'}`;
     prefix.textContent = role === 'user' ? 'You:' : 'FP:';
 
     const bubble = document.createElement('div');
-    bubble.className = `text-sm ${role === 'user' ? 'text-neutral-800' : 'text-neutral-700'} leading-relaxed whitespace-pre-wrap`;
+    bubble.className = `text-sm ${role === 'user' ? 'text-neutral-800' : 'text-neutral-700'} leading-relaxed whitespace-pre-wrap message-content`;
     bubble.textContent = content;
 
     inner.appendChild(prefix);
@@ -230,7 +252,28 @@ function formatDate(ts) {
     div.appendChild(inner);
     messagesDiv.appendChild(div);
 
-    requestAnimationFrame(() => {
+    // Scroll to bottom
+    setTimeout(() => {
+      scrollAnchor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+    
+    return bubble; // Return the content element for updates
+  }
+
+  // Function to update assistant message in real-time
+  function updateAssistantMessage(content) {
+    let assistantBubble = messagesDiv.querySelector('.assistant-message .message-content:last-child');
+    
+    if (!assistantBubble) {
+      // Create new assistant message if it doesn't exist
+      assistantBubble = appendMessage('assistant', content);
+    } else {
+      // Update existing assistant message
+      assistantBubble.textContent = content;
+    }
+    
+    // Scroll to bottom
+    setTimeout(() => {
       scrollAnchor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 50);
   }
@@ -286,10 +329,10 @@ function formatDate(ts) {
 
       // Render messages
       if (conv && conv.messages) {
-        conv.messages.forEach((m: any) => appendMessage(m.role, m.content));
+        conv.messages.forEach((m) => appendMessage(m.role, m.content));
 
         // Scroll to bottom
-        requestAnimationFrame(() => {
+        setTimeout(() => {
           scrollAnchor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 50);
       }
@@ -297,8 +340,9 @@ function formatDate(ts) {
       // Update history
       await updateHistory();
     } catch (e) {
-        messagesDiv.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load conversation.</p>';
+      messagesDiv.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load conversation.</p>';
     }
+  }
 
   // Global function for navigation
   window.loadConversation = loadConversation;

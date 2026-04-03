@@ -1,0 +1,3 @@
+# 函数配置 - 允许公开访问
+[verify_jwt]
+enabled = false

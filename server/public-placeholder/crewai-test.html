@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CrewAI Integration Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0A0A0B;
+            color: #E8E6DF;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #B8A98A;
+            border-bottom: 1px solid rgba(184,169,138,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .test-section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-title {
+            color: #F0EDE4;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-title::before {
+            content: '🧠';
+            font-size: 1.2em;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: #E8E6DF;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #B8A98A;
+        }
+        
+        button {
+            background: #B8A98A;
+            color: #0A0A0B;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+            border-left: 3px solid #B8A98A;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        
+        .status.running {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .status.completed {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+        }
+        
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+        }
+        
+        .phase-indicator {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .phase {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            font-size: 12px;
+            color: rgba(232,230,223,0.6);
+        }
+        
+        .phase.active {
+            background: rgba(184,169,138,0.2);
+            color: #B8A98A;
+            font-weight: 600;
+        }
+        
+        .phase.completed {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #B8A98A;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .log {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            color: rgba(232,230,223,0.5);
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .timestamp {
+            color: rgba(232,230,223,0.3);
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CrewAI Integration Test</h1>
+    
+    <div class="test-section">
+        <h2 class="test-title">Test CrewAI Thinking Session</h2>
+        <p>Enter a problem or question for the First Principles thinking coach:</p>
+        
+        <textarea id="userInput" placeholder="Example: How can I improve my team's productivity? Or: What's the best way to learn a new programming language?"></textarea>
+        
+        <div class="phase-indicator" id="phaseIndicator">
+            <div class="phase" data-phase="anchor">Anchor</div>
+            <div class="phase" data-phase="assumptions">Assumptions</div>
+            <div class="phase" data-phase="root_cause">Root Cause</div>
+            <div class="phase" data-phase="solution">Solution</div>
+            <div class="phase" data-phase="mindmap">Mind Map</div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        
+        <button id="startButton" onclick="startThinking()">Start First Principles Thinking</button>
+        <button id="checkButton" onclick="checkStatus()" disabled>Check Status</button>
+        
+        <div id="status" class="status"></div>
+        
+        <div class="log" id="log"></div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">API Endpoints</h2>
+        <p>Available CrewAI endpoints:</p>
+        <ul>
+            <li><code>POST /api/crewai/chat</code> - Start thinking session</li>
+            <li><code>GET /api/crewai/status/:session_id</code> - Check session status</li>
+            <li><code>GET /api/crewai/sessions</code> - List recent sessions</li>
+            <li><code>GET /api/crewai/health</code> - Health check</li>
+            <li><code>POST /api/chat/hybrid</code> - Hybrid chat (CrewAI + DeepSeek)</li>
+        </ul>
+    </div>
+
+    <script>
+        let currentSessionId = null;
+        let checkInterval = null;
+        const logEntries = [];
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logEntries.push({ timestamp, message });
+            
+            const logElement = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="timestamp">${timestamp}</span> ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function updatePhase(phase) {
+            const phases = document.querySelectorAll('.phase');
+            phases.forEach(p => {
+                p.classList.remove('active', 'completed');
+                
+                const phaseName = p.getAttribute('data-phase');
+                const phaseOrder = ['anchor', 'assumptions', 'root_cause', 'solution', 'mindmap'];
+                const currentIndex = phaseOrder.indexOf(phase);
+                const phaseIndex = phaseOrder.indexOf(phaseName);
+                
+                if (phaseIndex < currentIndex) {
+                    p.classList.add('completed');
+                } else if (phaseIndex === currentIndex) {
+                    p.classList.add('active');
+                }
+            });
+            
+            // Update progress
+            const progress = ((phaseOrder.indexOf(phase) + 1) / phaseOrder.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+        
+        function updateStatus(message, type = '') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = message ? 'block' : 'none';
+        }
+        
+        async function startThinking() {
+            const userInput = document.getElementById('userInput').value.trim();
+            if (!userInput) {
+                alert('Please enter a problem or question');
+                return;
+            }
+            
+            // Reset UI
+            currentSessionId = null;
+            updateStatus('Starting thinking session...', 'running');
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('checkButton').disabled = false;
+            
+            // Clear phases
+            document.querySelectorAll('.phase').forEach(p => {
+                p.classList.remove('active', 'completed');
+            });
+            document.getElementById('progressFill').style.width = '0%';
+            
+            log(`Starting thinking session with input: "${userInput.substring(0, 50)}..."`);
+            
+            try {
+                const response = await fetch('/api/crewai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: userInput
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentSessionId = result.session_id;
+                    updateStatus('Thinking session started! The crew is now analyzing your problem.', 'running');
+                    log(`Session started: ${currentSessionId}`);
+                    
+                    // Start polling for updates
+                    startPolling();
+                    
+                } else {
+                    updateStatus(`Error: ${result.error}`, 'error');
+                    log(`Failed to start session: ${result.error}`);
+                }
+                
+            } catch (error) {
+                updateStatus(`Network error: ${error.message}`, 'error');
+                log(`Network error: ${error.message}`);
+            }
+        }
+        
+        function startPolling() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+            }
+            
+            checkInterval = setInterval(checkStatus, 2000); // Check every 2 seconds
+        }
+        
+        async function checkStatus() {
+            if (!currentSessionId) return;
+            
+            try {
+                const response = await fetch(`/api/crewai/status/${currentSessionId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.completed) {
+                        // Session completed
+                        updateStatus('Thinking session completed!', 'completed');
+                        log('Session completed successfully');
+                        
+                        // Show result
+                        const resultElement = document.getElementById('result');
+                        resultElement.textContent = JSON.stringify(result.data, null, 2);
+                        resultElement.style.display = 'block';
+                        
+                        // Stop polling
+                        clearInterval(checkInterval);
+                        checkInterval = null;
+                        
+                    } else {
+                        // Session still running
+                        updateStatus(`Thinking in progress: ${result.current_phase || 'starting'} phase (${result.progress || 0}%)`, 'running');
+                        
+                        if (result.current_phase) {
+                            updatePhase(result.current_phase);
+                        }
+                        
+                        log(`Phase: ${result.current_phase || 'unknown'}, Progress: ${result.progress || 0}%`);
+                    }
+                } else {
+                    updateStatus(`Error: ${result.error}`, 'error');
+                    log(`Status check error: ${result.error}`);
+                    
+                    // Stop polling on error
+                    clearInterval(checkInterval);
+                    checkInterval = null;
+                }
+                
+            } catch (error) {
+                updateStatus(`Network error: ${error.message}`, 'error');
+                log(`Status check network error: ${error.message}`);
+            }
+        }
+        
+        // Initialize
+        log('CrewAI test page loaded');
+        updateStatus('Ready to start thinking session', '');
+        
+        // Example input
+        document.getElementById('userInput').value = "How can I improve my productivity while working from home?";
+    </script>
+</body>
+</html>
