@@ -239,9 +239,11 @@ app.get('/history', serveHTML('history.html'));
 app.get('/about', serveHTML('about.html'));
 
 const PORT = process.env.PORT || 4322;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`  Pages: http://localhost:${PORT}/`);
-  console.log(`  API:   http://localhost:${PORT}/api/chat`);
-  console.log(`  DB:    SQLite at /tmp/fp-db.sqlite3`);
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
+  console.log(`  Local:  http://localhost:${PORT}`);
+  console.log(`  Public: http://43.153.79.127:${PORT}`);
+  console.log(`  API:    http://${HOST}:${PORT}/api/chat`);
+  console.log(`  DB:     SQLite at /tmp/fp-db.sqlite3`);
 });
