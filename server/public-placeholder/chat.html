@@ -359,23 +359,52 @@ async function handleSendMessage() {
     
     // Remove typing indicator
     removeTyping();
-    
-    // For now, show a simulated response since API needs key
-    const aiResponses = [
-      "Interesting question. What's the real problem you're trying to solve?",
-      "Let's break this down. What assumptions are you making about this situation?",
-      "Thanks for sharing. What would be the ideal outcome here?",
-      "Let me think about that. What's preventing you from solving this now?",
-      "Good question. What have you already tried, and what happened?"
-    ];
-    
-    const aiResponse = aiResponses[questionCount % aiResponses.length];
-    
-    // Show AI response
-    addMessage('assistant', aiResponse);
-    messages.push({ role: 'assistant', content: aiResponse });
+
+    // Read SSE stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let assistantContent = '';
+
+    // Create message bubble for streaming
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'msg-group';
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    msgDiv.innerHTML = '<div class="msg-av ai-av">F</div><div class="msg-content"><div class="msg-bubble ai-bubble"></div><div class="msg-time">First Principles · ' + time + '</div></div>';
+    chatEl.appendChild(msgDiv);
+    const bubbleContent = msgDiv.querySelector('.msg-bubble');
+    scrollToBottom();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              assistantContent += parsed.content;
+              if (bubbleContent) {
+                bubbleContent.textContent = assistantContent;
+              }
+              scrollToBottom();
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+    }
+
+    messages.push({ role: 'assistant', content: assistantContent });
     questionCount++;
-    
+
     console.log('AI response shown, question count:', questionCount);
     
   } catch (error) {

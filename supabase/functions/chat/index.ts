@@ -149,21 +149,49 @@ serve(async (req) => {
       userId: userId,
     })
 
-    const response: ChatResponse = {
-      success: aiResponse.success,
-      message: aiResponse.message,
-      error: aiResponse.error,
-      data: aiResponse.data,
-      conversationId: conversationId || `conv-${Date.now()}`,
-    }
+    // Return SSE stream
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Send conversation ID first
+          const convId = conversationId || `conv-${Date.now()}`
+          controller.enqueue(
+            new TextEncoder().encode(
+              `data: ${JSON.stringify({ conversationId: convId })}\n\n`
+            )
+          )
 
-    return new Response(
-      JSON.stringify(response),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: aiResponse.success ? 200 : 500,
-      }
-    )
+          // Send message content
+          if (aiResponse.success && aiResponse.message) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                `data: ${JSON.stringify({ content: aiResponse.message })}\n\n`
+              )
+            )
+          }
+
+          // Send DONE marker
+          controller.enqueue(
+            new TextEncoder().encode('data: [DONE]\n\n')
+          )
+
+          controller.close()
+        } catch (error) {
+          console.error('Stream error:', error)
+          controller.error(error)
+        }
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+      status: aiResponse.success ? 200 : 500,
+    })
 
   } catch (error) {
     console.error('Chat function error:', error)
@@ -271,7 +299,7 @@ async function callDeepSeekAPI(params: {
         messages: apiMessages,
         temperature: 0.7,
         max_tokens: 2000,
-        stream: false,
+        stream: true,  // 启用 SSE 流式响应
       }),
     })
 
@@ -280,12 +308,43 @@ async function callDeepSeekAPI(params: {
       throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`)
     }
 
-    const data = await response.json()
-    const message = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.'
+    // 读取流式响应
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No response body')
+    }
+
+    const decoder = new TextDecoder()
+    let fullContent = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = decoder.decode(value)
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') break
+
+          try {
+            const parsed = JSON.parse(data)
+            const content = parsed.choices?.[0]?.delta?.content
+            if (content) {
+              fullContent += content
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+    }
 
     return {
       success: true,
-      message: message,
+      message: fullContent || 'Sorry, I could not generate a response.',
       data: {
         provider: 'deepseek',
         model: 'deepseek-chat',
@@ -296,7 +355,7 @@ async function callDeepSeekAPI(params: {
 
   } catch (error) {
     console.error('DeepSeek API call failed:', error)
-    
+
     return {
       success: false,
       error: 'AI service temporarily unavailable. Please try again later.',
