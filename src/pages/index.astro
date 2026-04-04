@@ -1,96 +1,95 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Nav from '../components/Nav.astro';
-import Card from '../components/Card.astro';
-
-const cards = [
-  { emoji: '🎯', title: 'State your real problem', subtitle: 'Find what you actually care about.', desc: 'The AI asks one question to find what you actually care about.' },
-  { emoji: '🔍', title: 'Break your assumptions', subtitle: 'The AI challenges your "obvious" assumptions.', desc: 'Structured questions reveal hidden premises you didn\'t know you had.' },
-  { emoji: '🧠', title: 'Reach the root cause', subtitle: '5 Why tracing to the real problem.', desc: 'Strip away layers until only the fundamental fact remains.' },
-  { emoji: '💡', title: 'Rebuild from scratch', subtitle: 'Start from root facts, not compromises.', desc: 'From the ground up, construct your own solution.' },
-  { emoji: '✅', title: 'Validate & act', subtitle: 'Check blind spots and set a first step.', desc: 'Test your new plan, identify risks, commit to action.' },
-  { emoji: '🗺️', title: 'Get your mind map', subtitle: 'Visual summary of the journey.', desc: 'Interactive mindmap of assumptions broken, insights found, and action plan.' },
-];
-
-const howItWorks = 'When you type a question, the AI guides you through 5 phases with one question at a time — no answers, only questions. At the end, you get an interactive mind map.';
-
-const differences = [
-  { other: 'ChatGPT, Claude, Perplexity', here: 'Not answers — guided thinking.' },
-  { other: 'Generic advice', here: 'Structured five-phase framework + visual output.' },
-  { other: 'One-size-fits-all', here: 'Question → Assumption → Root → Rebuild → Verify.' },
-];
-
 ---
 
-<Layout title="First Principles — Free AI Thinking Tool">
-  <Nav />
-  <div class="relative overflow-hidden">
-    <!-- Background decoration -->
-    <div class="absolute inset-0 -z-10">
-      <div class="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-br from-sky-100/30 via-blue-200/60 to-purple-300/60 opacity-30 blur-3xl"></div>
+<Layout title="First Principles — Think Through Any Problem">
+  <nav>
+    <a href="/" class="logo">First <span>Principles</span></a>
+    <ul class="nav-links">
+      <li><a href="/chat/new">Start thinking</a></li>
+      <li><a href="/about">How it works</a></li>
+      <li><a href="/about">Pricing</a></li>
+      <li><a href="/chat/new" class="nav-cta">New session</a></li>
+    </ul>
+  </nav>
+
+  <div class="landing">
+    <div class="hero-left">
+      <div class="hero-eyebrow">First Principles · Thinking Coach</div>
+      <h1 class="hero-h1">
+        Think through<br>
+        any problem<br>
+        in <em>15 minutes.</em>
+      </h1>
+      <p class="hero-sub">
+        Not an AI chatbot. A Socratic thinking coach — 8 to 10 precise questions that help you find your own answer.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="startSession()">Start a session</button>
+        <button class="btn-ghost" onclick="location.href='/about'">How it works</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="n">15'</div>
+          <div class="l">avg. session length</div>
+        </div>
+        <div class="stat-item">
+          <div class="n">8–10</div>
+          <div class="l">targeted questions</div>
+        </div>
+        <div class="stat-item">
+          <div class="n">1 map</div>
+          <div class="l">shareable mind map</div>
+        </div>
+      </div>
     </div>
 
-    <div class="relative max-w-4xl mx-auto px-4 sm:px-6 py-24 sm:py-36">
-      <!-- Hero -->
-      <div class="text-center mb-16 relative z-10">
-        <p class="text-5xl mb-4">🧠</p>
-        <h1 class="text-3xl sm:text-5xl md:text-6xl font-bold text-neutral-900 mb-3">
-          Think from <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-blue-600">first principles</span>.
-        </h1>
-        <p class="text-lg sm:text-xl text-neutral-500 font-serif italic max-w-xl mx-auto mb-8">
-          AI-guided thinking for life's hard questions.
-        </p>
-        <a
-          href="#start-section"
-          class="inline-flex items-center gap-2 bg-white hover:bg-neutral-50 text-neutral-900 font-semibold px-8 py-3.5 rounded-full transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 border border-neutral-200"
-        >
-          Start Guided Thinking →
-        </a>
+    <div class="hero-right">
+      <div class="mini-chat">
+        <div class="mini-chat-header">
+          <div class="phase-badge">Phase 2 · Challenging Assumptions</div>
+          <div class="progress-dots">
+            <div class="dot done"></div>
+            <div class="dot done"></div>
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+        </div>
+        <div class="msg-row">
+          <div class="avatar ai">F</div>
+          <div class="bubble ai">You said you "must raise funding before going full-time" — <em>who told you that was necessary?</em></div>
+        </div>
+        <div class="msg-row user">
+          <div class="avatar user-av">Me</div>
+          <div class="bubble user-b">I guess… I assumed the risk was too high without it</div>
+        </div>
+        <div class="msg-row">
+          <div class="avatar ai">F</div>
+          <div class="bubble ai">If that assumption were wrong, <em>what would your first move look like?</em></div>
+        </div>
       </div>
 
-      <!-- Start section -->
-      <section id="start-section" class="scroll-mt-20">
-        <div class="text-center mb-10">
-          <p class="text-sm uppercase tracking-wider text-neutral-400 font-semibold mb-6">How It Works</p>
-          <p class="text-neutral-600 max-w-xl mx-auto">{howItWorks}</p>
-        </div>
-      </section>
+      <div class="stage-map">
+        <div class="stage-item"><div class="stage-num done">✓</div><div class="stage-label">Anchor</div></div>
+        <div class="stage-item"><div class="stage-num done">✓</div><div class="stage-label">Assumptions</div></div>
+        <div class="stage-item"><div class="stage-num cur">3</div><div class="stage-label active">Root cause</div></div>
+        <div class="stage-item"><div class="stage-num">4</div><div class="stage-label">Rebuild</div></div>
+        <div class="stage-item"><div class="stage-num">5</div><div class="stage-label">Mind map</div></div>
+      </div>
 
-      <!-- Cards grid -->
-      <section class="scroll-mt-12">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {cards.map((card) => (
-            <Card {...card} />
-          ))}
-        </div>
-      </section>
-
-      <!-- Differences -->
-      <section class="scroll-mt-16">
-        <div class="text-center mb-8">
-          <p class="text-sm uppercase tracking-wider text-neutral-400 font-semibold mb-6">Why Us, Not Others?</p>
-        </div>
-        <div class="space-y-4 max-w-xl mx-auto">
-          {differences.map((d: any, i: number) => (
-            <div class="flex items-start gap-3">
-              <span class="text-2xl font-bold text-sky-600">{d.emoji}</span>
-              <div>
-                <p class="font-medium text-neutral-800">{d.other}</p>
-                <p class="text-sm text-neutral-600">{d.here}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <!-- CTA -->
-      <section class="scroll-mt-16 text-center">
-        <a
-          href="/#start-section"
-          class="inline-flex items-center gap-2 bg-white hover:bg-neutral-50 text-neutral-900 font-semibold px-8 py-3.5 rounded-full border border-neutral-200 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-        >
-          Get Started →
-        </a>
-      </section>
+      <div class="assumptions-preview">
+        <div class="ap-label">Assumptions broken so far</div>
+        <div class="ap-item">Need funding before starting</div>
+        <div class="ap-item">Going full-time = taking it seriously</div>
+        <div class="ap-insight">"What I'm really afraid of is what people will think if I fail."</div>
+      </div>
     </div>
-  </Layout>
+  </div>
+</Layout>
+
+<script is:inline>
+function startSession() {
+  window.location.href = '/chat/new';
+}
+</script>

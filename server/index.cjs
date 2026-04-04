@@ -2,6 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+// Polyfill fetch for older Node.js
+if (!globalThis.fetch) {
+  globalThis.fetch = require('node-fetch');
+}
 
 const db = require('./db.cjs');
 
@@ -19,9 +25,13 @@ try {
   console.warn('Warning: skill.md not found at', SKILL_PATH);
 }
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-5b7dacf1cc7f4066a0a0d7bb8f082c5b';
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+
+console.log('Environment check:');
+console.log('  DEEPSEEK_API_KEY exists:', !!DEEPSEEK_API_KEY);
+console.log('  DEEPSEEK_API_KEY length:', DEEPSEEK_API_KEY.length);
 
 // ==================== API Routes ====================
 
@@ -53,68 +63,96 @@ app.post('/api/chat', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
 
+  // 语言检测函数
+  function detectLanguage(text) {
+    const chineseRegex = /[\u4e00-\u9fff]/;
+    const englishRegex = /[a-zA-Z]/;
+    
+    let chineseCount = 0;
+    let englishCount = 0;
+    
+    for (const char of text) {
+      if (chineseRegex.test(char)) {
+        chineseCount++;
+      } else if (englishRegex.test(char)) {
+        englishCount++;
+      }
+    }
+    
+    if (chineseCount > englishCount * 2 && chineseCount > 0) {
+      return 'chinese';
+    } else if (englishCount > chineseCount * 2 && englishCount > 0) {
+      return 'english';
+    }
+    return 'english';
+  }
+  
+  // 获取用户最后一条消息
+  const lastUserMessage = messages[messages.length - 1]?.content || '';
+  const detectedLanguage = detectLanguage(lastUserMessage);
+  
+  // 构建语言特定的系统提示
+  let languageInstruction = '';
+  if (detectedLanguage === 'chinese') {
+    languageInstruction = `\n\n# 当前对话语言：中文\n你正在与使用中文的用户对话。请务必使用中文回复，保持专业、清晰的表达。`;
+  } else if (detectedLanguage === 'english') {
+    languageInstruction = `\n\n# Current Conversation Language: English\nYou are conversing with a user who is using English. Please respond in English, maintaining professional and clear expression.`;
+  } else {
+    languageInstruction = `\n\n# Current Conversation Language: Detected as ${detectedLanguage}\nPlease respond in the same language as the user's message.`;
+  }
+  
   const systemPrompt = `You are "First Principles", an AI thinking guide. You MUST follow the skill instructions below exactly. This is your core identity — you are NOT a generic chatbot. Never skip the framework.
 
-IMPORTANT: Always respond in ENGLISH, regardless of the language used in the skill instructions below. The skill framework is written in Chinese but your responses to the user must be in English.
+# Language Detection & Response Rule
+CRITICAL: You MUST detect the language of the user's last message and respond in the SAME language.
+- If the user writes in Chinese, respond in Chinese
+- If the user writes in English, respond in English
+- If the user writes in another language, respond in that language
+- If the user mixes languages, respond in the primary language used
+- Never force English if the user is using another language
+
+${languageInstruction}
 
 ${skillContent}`;
 
   try {
+    const apiKey = DEEPSEEK_API_KEY.trim();
+    console.log('API Key being used:', apiKey.substring(0, 10) + '...');
+    console.log('Authorization header:', `Bearer ${apiKey.substring(0, 10)}...`);
+    
+    const requestBody = {
+      model: DEEPSEEK_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+      ],
+      stream: false,
+    };
+    
+    console.log('Request body size:', JSON.stringify(requestBody).length, 'chars');
+    
     const response = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    console.log('Response status:', response.status);
+    
     if (!response.ok) {
       const errText = await response.text();
-      console.error('DeepSeek API error:', response.status, errText);
+      console.error('DeepSeek API error details:', response.status, errText.substring(0, 200));
       res.write(`data: ${JSON.stringify({ error: 'AI service unavailable' })}\n\n`);
       res.end();
       return;
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = '';
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') continue;
-
-        try {
-          const parsed = JSON.parse(data);
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) {
-            fullContent += delta;
-            res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
-          }
-        } catch (e) {
-          // ignore parse errors
-        }
-      }
-    }
-
+    const data = await response.json();
+    const message = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+    
     // Save to DB
     let convId = conversationId;
     const userMsg = messages[messages.length - 1]?.content || '';
@@ -123,11 +161,13 @@ ${skillContent}`;
       res.write(`data: ${JSON.stringify({ conversationId: convId })}\n\n`);
     }
     db.addMessage(convId, 'user', userMsg);
-    db.addMessage(convId, 'assistant', fullContent);
+    db.addMessage(convId, 'assistant', message);
     if (messages.length <= 1) {
       db.updateTitle(convId, userMsg.slice(0, 80));
     }
 
+    // 发送完整响应
+    res.write(`data: ${JSON.stringify({ content: message })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err) {
@@ -178,11 +218,12 @@ mindmap
 Output ONLY the mermaid code block between triple backticks with "mermaid" tag.`;
 
   try {
+    const apiKey = DEEPSEEK_API_KEY.trim();
     const response = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,

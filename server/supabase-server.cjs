@@ -11,9 +11,9 @@ app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '1mb' }));
 
 // 环境变量配置
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bmstklfbnyevuyxidmhv.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wnQx8LZ7qUgVAsVOaEnuVQ_Ede5tM3w';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-5b7dacf1cc7f4066a0a0d7bb8f082c5b';
 
 // 检查必需的环境变量
 if (!SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('localhost')) {
