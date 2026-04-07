@@ -69,7 +69,7 @@
 | 后端 | Cloudflare Workers | API 代理 + 大模型调用 |
 | LLM | DeepSeek Chat (主) / GLM-5-Turbo (备) | 思维引导核心引擎 |
 | 认证 | Cloudflare Zero Trust | 简单邮箱/社交登录 |
-| 数据库 | Cloudflare D1 (SQLite) | 对话历史存储 |
+| 数据库 | Supabase PostgreSQL | 对话历史存储（云端） |
 
 ### 4.2 系统流程
 
@@ -320,7 +320,7 @@ CREATE TABLE mindmaps (
 | 框架 | Astro | 静态优先，SEO 极佳，性能好，符合极简设计 |
 | 部署 | Cloudflare Pages | 免费额度足够，全球 CDN，开发者体验好 |
 | API 层 | Cloudflare Workers | 与 Pages 同生态，延迟低，免费额度高 |
-| 数据库 | Cloudflare D1 | SQLite 兼容，免费，与 Workers 无缝集成 |
+| 数据库 | Supabase PostgreSQL | 云端托管，自动扩展，内置 RLS 安全 |
 | LLM | DeepSeek Chat 性价比高，中文能力出色 |
 | 脑图 | Mermaid.js | 轻量，前端渲染，用户可直接交互 |
 | 认证 | Cloudflare Zero Trust | 零代码实现，邮箱登录即可 |
