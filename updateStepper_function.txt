@@ -1,0 +1,39 @@
+// 添加 updateStepper 函数（在 addMessageToUI 之后）
+function updateStepper(phase) {
+  if (phase === currentPhase) return;
+  
+  currentPhase = phase;
+  
+  const phaseNames = ['', 'UNDERSTAND', 'DECONSTRUCT', 'REBUILD', 'ACT', 'COMPLETE'];
+  phaseText.textContent = phaseNames[phase];
+  
+  const steps = stepper.querySelectorAll('.step-row');
+  steps.forEach((step, index) => {
+    const stepNum = index + 1;
+    const circle = step.querySelector('.step-circle');
+    const line = step.querySelector('.step-line');
+    const name = step.querySelector('.step-name');
+    
+    circle.classList.remove('s-done', 's-cur');
+    line?.classList.remove('done');
+    name.classList.remove('s-cur');
+    
+    if (stepNum < phase) {
+      circle.classList.add('s-done');
+      line?.classList.add('done');
+    } else if (stepNum === phase) {
+      circle.classList.add('s-cur');
+      name.classList.add('s-cur');
+    }
+  });
+  
+  console.log(`📍 Phase updated: ${phase} - ${phaseNames[phase]}`);
+  
+  if (phase === 5) {
+    phaseText.style.background = 'rgba(184, 169, 138, 0.1)';
+    phaseText.style.color = '#B8A98A';
+  } else {
+    phaseText.style.background = '';
+    phase phaseText.style.color = '';
+  }
+}

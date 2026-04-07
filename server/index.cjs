@@ -17,10 +17,6 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '1mb' }));
 
-// ==================== 静态文件服务 ====================
-const publicDir = path.resolve(__dirname, 'public-placeholder');
-app.use(express.static(publicDir));
-
 function serveHTML(filename) {
   return (req, res) => {
     const filePath = path.join(publicDir, filename);
@@ -32,15 +28,18 @@ function serveHTML(filename) {
   };
 }
 
-// 路由：HTML 页面
+// 路由：HTML 页面（必须在静态文件中间件之前）
 app.get('/chat/:id', serveHTML('chat.html'));
 app.get('/mindmap/:id', serveHTML('mindmap.html'));
 app.get('/history', serveHTML('history.html'));
 app.get('/about', serveHTML('about.html'));
+app.get('/pricing', serveHTML('pricing.html'));
 app.get('/chat', serveHTML('chat.html'));
-
-// 默认首页
 app.get('/', serveHTML('index.html'));
+
+// ==================== 静态文件服务 ====================
+const publicDir = path.resolve(__dirname, 'public-placeholder');
+app.use(express.static(publicDir));
 
 // ==================== Supabase 健康检查代理 ====================
 // 本地开发时可以使用这个端点检查 Supabase 状态

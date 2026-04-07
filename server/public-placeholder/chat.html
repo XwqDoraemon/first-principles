@@ -89,9 +89,6 @@
   .step-desc { font-size: 11px; color: rgba(232,230,223,0.18); transition: color 0.3s ease; }
   .step-name.s-cur + .step-desc { color: rgba(184,169,138,0.4); }
 
-  .api-status { padding: 12px 14px; background: rgba(34,197,94,0.04); border: 0.5px solid rgba(34,197,94,0.12); border-radius: 8px; font-size: 11px; color: rgba(34,197,94,0.6); }
-  .api-status.error { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.12); color: rgba(239,68,68,0.6); }
-
   .empty-state { text-align: center; padding: 60px 28px; }
   .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
   .empty-title { font-size: 16px; color: rgba(232,230,223,0.5); margin-bottom: 8px; }
@@ -100,12 +97,7 @@
 </head>
 <body>
 <nav>
-  <a href="/" class="logo">First Principles<span>.ai</span></a>
-  <div style="display: flex; gap: 16px; align-items: center;">
-    <div class="api-status" id="apiStatus">
-      <span class="loading-spinner"></span> 连接 Supabase...
-    </div>
-  </div>
+  <a href="/" class="logo">First <span>Principles</span></a>
 </nav>
 
 <div class="chat-page">
@@ -128,10 +120,10 @@
     </div>
 
     <div class="chat-messages" id="chatMessages">
-      <div class="empty-state">
+      <div class="empty-state" id="emptyState">
         <div class="empty-icon">🧠</div>
-        <div class="empty-title">Start a new thinking session</div>
-        <div class="empty-desc">Ask a question or describe a problem. I'll help you think through it using first principles.</div>
+        <div class="empty-title" id="emptyTitle">Connecting...</div>
+        <div class="empty-desc" id="emptyDesc">Please wait while we connect to the service</div>
       </div>
     </div>
 
@@ -146,7 +138,7 @@
     </div>
   </main>
 
-  <aside class="sidebar-right">
+  
     <div>
       <div class="panel-label">THINKING FRAMEWORK</div>
       <div class="stepper" id="stepper">
@@ -183,10 +175,20 @@
         <div class="step-row" data-step="4">
           <div class="step-left">
             <div class="step-circle">4</div>
+            <div class="step-line"></div>
           </div>
           <div class="step-right">
             <div class="step-name">Act</div>
             <div class="step-desc">Define clear actions</div>
+          </div>
+        </div>
+        <div class="step-row" data-step="5">
+          <div class="step-left">
+            <div class="step-circle">5</div>
+          </div>
+          <div class="step-right">
+            <div class="step-name">Complete</div>
+            <div class="step-desc">Summary & Next Steps</div>
           </div>
         </div>
       </div>
@@ -209,7 +211,6 @@ const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
 const chatMessages = document.getElementById('chatMessages');
 const newChatBtn = document.getElementById('newChatBtn');
-const apiStatus = document.getElementById('apiStatus');
 const stepper = document.getElementById('stepper');
 const phaseText = document.getElementById('phaseText');
 
@@ -264,42 +265,6 @@ function detectPhaseFromText(text) {
  * 更新 Stepper UI
  * @param {number} phase - 当前阶段 (1-4)
  */
-function updateStepper(phase) {
-  if (phase === currentPhase) return; // 没有变化，不需要更新
-  
-  currentPhase = phase;
-  
-  // 更新阶段文本
-  const phaseNames = ['', 'UNDERSTAND', 'DECONSTRUCT', 'REBUILD', 'ACT'];
-  phaseText.textContent = phaseNames[phase];
-  
-  // 更新所有步骤的状态
-  const steps = stepper.querySelectorAll('.step-row');
-  steps.forEach((step, index) => {
-    const stepNum = index + 1;
-    const circle = step.querySelector('.step-circle');
-    const line = step.querySelector('.step-line');
-    const name = step.querySelector('.step-name');
-    
-    // 清除所有状态类
-    circle.classList.remove('s-done', 's-cur');
-    line?.classList.remove('done');
-    name.classList.remove('s-cur');
-    
-    if (stepNum < phase) {
-      // 已完成的步骤
-      circle.classList.add('s-done');
-      line?.classList.add('done');
-    } else if (stepNum === phase) {
-      // 当前步骤
-      circle.classList.add('s-cur');
-      name.classList.add('s-cur');
-    }
-    // 后续步骤保持默认状态
-  });
-  
-  console.log(`📍 Phase updated: ${phase} - ${phaseNames[phase]}`);
-}
 
 // ==================== API 调用 ====================
 async function callSupabaseChat(messages, userId = 'local-user') {
@@ -506,6 +471,9 @@ function updateAIMessage(content) {
 }
 
 async function checkSupabaseHealth() {
+  const emptyTitle = document.getElementById('emptyTitle');
+  const emptyDesc = document.getElementById('emptyDesc');
+  
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/health`, {
       method: 'GET',
@@ -516,15 +484,17 @@ async function checkSupabaseHealth() {
 
     if (response.ok) {
       const data = await response.json();
-      apiStatus.textContent = '✓ Supabase 已连接';
-      apiStatus.classList.remove('error');
+      // 连接成功，更新空状态内容
+      if (emptyTitle) emptyTitle.textContent = 'Start a new thinking session';
+      if (emptyDesc) emptyDesc.textContent = 'Ask a question or describe a problem. I\'ll help you think through it using first principles.';
       return true;
     } else {
       throw new Error('Health check failed');
     }
   } catch (error) {
-    apiStatus.textContent = '✗ 连接失败';
-    apiStatus.classList.add('error');
+    // 连接失败，保持英文提示
+    if (emptyTitle) emptyTitle.textContent = 'Connection Failed';
+    if (emptyDesc) emptyDesc.textContent = 'Unable to connect to the service. Please refresh the page.';
     console.error('Supabase health check failed:', error);
     return false;
   }
@@ -582,6 +552,14 @@ function hideTyping() {
 // ==================== 消息发送 ====================
 async function sendMessage() {
   const content = userInput.value.trim();
+  // 检查是否处于第 5 阶段（完成阶段）
+  if (currentPhase === 5) {
+    addMessageToUI('assistant', '本次思考已经完成。如果你想开始新的思考话题，请点击左侧的"＋ Start thinking"按钮开始新对话。');
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    return;
+  }
+
   if (!content) return;
 
   userInput.value = '';
@@ -664,10 +642,10 @@ function createNewConversation() {
   }
   
   chatMessages.innerHTML = `
-    <div class="empty-state">
+    <div class="empty-state" id="emptyState">
       <div class="empty-icon">🧠</div>
-      <div class="empty-title">Start a new thinking session</div>
-      <div class="empty-desc">Ask a question or describe a problem. I'll help you think through it using first principles.</div>
+      <div class="empty-title" id="emptyTitle">Start a new thinking session</div>
+      <div class="empty-desc" id="emptyDesc">Ask a question or describe a problem. I'll help you think through it using first principles.</div>
     </div>
   `;
 }
