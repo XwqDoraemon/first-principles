@@ -100,400 +100,312 @@
   .preview-btn:hover { color: rgba(184,169,138,0.7); border-color: rgba(184,169,138,0.22); }
   .preview-btn.visible { display: block; }
 
-  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
-  .empty-state h2 { font-family: 'Lora', serif; font-size: 24px; font-weight: 400; color: #F0EDE4; margin-bottom: 8px; letter-spacing: -0.5px; }
-  .empty-state p { color: rgba(232,230,223,0.4); font-size: 14px; line-height: 1.6; }
+  .api-status { padding: 12px 14px; background: rgba(34,197,94,0.04); border: 0.5px solid rgba(34,197,94,0.12); border-radius: 8px; font-size: 11px; color: rgba(34,197,94,0.6); }
+  .api-status.error { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.12); color: rgba(239,68,68,0.6); }
+  .loading-spinner { border: 2px solid rgba(255,255,255,0.05); border-top: 2px solid #B8A98A; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-  @media (max-width: 1100px) { .chat-page { grid-template-columns: 220px 1fr 240px; } }
-  @media (max-width: 860px) {
-    .chat-page { grid-template-columns: 1fr; }
-    .sidebar-left, .sidebar-right { display: none; }
-  }
+  .empty-state { text-align: center; padding: 60px 28px; }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-title { font-size: 16px; color: rgba(232,230,223,0.5); margin-bottom: 8px; }
+  .empty-desc { font-size: 13px; color: rgba(232,230,223,0.25); line-height: 1.6; max-width: 320px; margin: 0 auto; }
 </style>
 </head>
 <body>
 <nav>
-  <a href="/" class="logo">First <span>Principles</span></a>
-  <div style="display:flex;gap:24px;align-items:center;">
-    <a href="/history" style="text-decoration:none;color:rgba(232,230,223,0.5);font-size:13px;">History</a>
-    <a href="/about" style="text-decoration:none;color:rgba(232,230,223,0.5);font-size:13px;">About</a>
+  <a href="/" class="logo">First Principles<span>.ai</span></a>
+  <div style="display: flex; gap: 16px; align-items: center;">
+    <div class="api-status" id="apiStatus">
+      <span class="loading-spinner"></span> 连接 Supabase...
+    </div>
   </div>
 </nav>
+
 <div class="chat-page">
-  <div class="sidebar-left" id="sidebar-left">
-    <div class="sidebar-section-label">Past sessions</div>
-    <div id="history-list"><div style="color:rgba(232,230,223,0.2);font-size:12px;padding:8px 4px;">No sessions yet</div></div>
-    <div style="margin-top:16px;padding-top:14px;border-top:0.5px solid rgba(255,255,255,0.06);">
-      <button class="new-chat-btn" id="new-session-btn">+ New session</button>
-    </div>
-  </div>
-  
-  <div class="chat-main">
+  <aside class="sidebar-left">
+    <div class="sidebar-section-label">SESSIONS</div>
+    <div id="historyList"></div>
+    <button class="new-chat-btn" id="newChatBtn">＋ New Session</button>
+  </aside>
+
+  <main class="chat-main">
     <div class="chat-top-bar">
       <div class="session-info">
-        <div class="session-title" id="session-title">New session</div>
-        <div class="session-sub" id="session-sub">Start by typing your problem below</div>
+        <div class="session-title" id="sessionTitle">New Session</div>
+        <div class="session-sub" id="sessionSub">First-principles thinking framework</div>
       </div>
-      <div class="phase-pill" id="phase-pill" style="display:none;">
+      <div class="phase-pill">
         <div class="phase-dot"></div>
-        <div class="phase-text" id="phase-text">Phase 1</div>
+        <span class="phase-text">THINKING</span>
       </div>
     </div>
-    
-    <div class="chat-messages" id="chat-messages">
-      <div class="empty-state" id="empty-state">
-        <div style="font-size:48px;margin-bottom:16px;opacity:0.6">🧠</div>
-        <h2>Think from first principles.</h2>
-        <p>Type your problem, dilemma, or question below.<br>A thinking coach will guide you — one question at a time.</p>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="empty-state">
+        <div class="empty-icon">🧠</div>
+        <div class="empty-title">Start a new thinking session</div>
+        <div class="empty-desc">Ask a question or describe a problem. I'll help you think through it using first principles.</div>
       </div>
     </div>
-    
+
     <div class="chat-input-area">
       <div class="input-wrapper">
-        <textarea class="chat-textarea" id="user-input" rows="1" placeholder="Share your thoughts…" autofocus></textarea>
-        <button class="send-btn" id="send-btn" type="button">
+        <textarea class="chat-textarea" id="userInput" placeholder="What's on your mind?" rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" disabled>
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
-      <div class="input-hint">Enter to send · <a id="skip-advice-link">Skip to advice</a></div>
+      <div class="input-hint">Powered by DeepSeek AI via Supabase Edge Functions</div>
     </div>
-  </div>
-  
-  <div class="sidebar-right" id="sidebar-right">
+  </main>
+
+  <aside class="sidebar-right">
     <div>
-      <div class="panel-label">Session progress</div>
-      <div class="stepper" id="stepper"></div>
-    </div>
-    <div id="assumptions-panel" style="display:none;">
-      <div class="panel-label">Assumptions broken</div>
-      <div id="assumptions-list"></div>
-    </div>
-    <div id="insight-panel" style="display:none;">
-      <div class="panel-label">Key insight</div>
-      <div class="insight-card">
-        <div class="insight-quote" id="insight-quote"></div>
-        <div class="insight-attr">· Waiting to emerge</div>
+      <div class="panel-label">THINKING FRAMEWORK</div>
+      <div class="stepper" id="stepper">
+        <div class="step-row">
+          <div class="step-left">
+            <div class="step-circle s-cur">1</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-right">
+            <div class="step-name s-cur">Understand</div>
+            <div class="step-desc">Grasp the core problem</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-left">
+            <div class="step-circle">2</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-right">
+            <div class="step-name">Deconstruct</div>
+            <div class="step-desc">Break down assumptions</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-left">
+            <div class="step-circle">3</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-right">
+            <div class="step-name">Rebuild</div>
+            <div class="step-desc">Build from first principles</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-left">
+            <div class="step-circle">4</div>
+          </div>
+          <div class="step-right">
+            <div class="step-name">Act</div>
+            <div class="step-desc">Define clear actions</div>
+          </div>
+        </div>
       </div>
     </div>
-    <button class="preview-btn" id="mindmap-btn">Preview mind map →</button>
-  </div>
+  </aside>
 </div>
 
 <script>
-// ============================================
-// WORKING JAVASCRIPT - NO SYNTAX ERRORS
-// ============================================
-console.log('=== First Principles Chat - Working Version ===');
+// ==================== 配置 ====================
+const SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_wnQx8LZ7qUgVAsVOaEnuVQ_Ede5tM3w';
 
-// Get elements
-const chatEl = document.getElementById('chat-messages');
-const userInput = document.getElementById('user-input');
-const sendBtn = document.getElementById('send-btn');
-const emptyState = document.getElementById('empty-state');
-const phasePill = document.getElementById('phase-pill');
-const phaseText = document.getElementById('phase-text');
-
-console.log('Elements loaded:', {
-  chatEl: !!chatEl,
-  userInput: !!userInput,
-  sendBtn: !!sendBtn,
-  emptyState: !!emptyState
-});
-
-// State
-let isStreaming = false;
+// ==================== 状态管理 ====================
+let currentConversationId = null;
 let messages = [];
-let questionCount = 0;
 
-// Scroll function
-function scrollToBottom() {
-  if (chatEl) {
-    requestAnimationFrame(() => {
-      chatEl.scrollTop = chatEl.scrollHeight;
-    });
-  }
-}
+// ==================== DOM 元素 ====================
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const chatMessages = document.getElementById('chatMessages');
+const newChatBtn = document.getElementById('newChatBtn');
+const apiStatus = document.getElementById('apiStatus');
 
-// Show typing indicator
-function showTyping() {
-  if (!chatEl) return;
-  
-  const typingDiv = document.createElement('div');
-  typingDiv.className = 'typing-row';
-  typingDiv.id = 'typing-indicator';
-  typingDiv.innerHTML = '<div class="msg-av ai-av" style="opacity:0">F</div><div class="typing-dots"><span></span><span></span><span></span></div>';
-  chatEl.appendChild(typingDiv);
-  scrollToBottom();
-}
-
-// Remove typing indicator
-function removeTyping() {
-  const indicator = document.getElementById('typing-indicator');
-  if (indicator) {
-    indicator.remove();
-  }
-}
-
-// Add message to chat
-function addMessage(role, content) {
-  if (!chatEl) return;
-  
-  // Hide empty state
-  if (emptyState) {
-    emptyState.style.display = 'none';
-  }
-  
-  // Create message element
-  const msgDiv = document.createElement('div');
-  msgDiv.className = 'msg-group ' + (role === 'user' ? 'user-msg' : '');
-  
-  const time = new Date().toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
+// ==================== API 调用 ====================
+async function callSupabaseChat(messages, userId = 'local-user') {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify({
+      messages: messages,
+      userId: userId
+    })
   });
-  
-  // Build HTML safely (avoid complex template strings)
-  let html = '<div class="msg-av ';
-  html += role === 'user' ? 'u-av">Me' : 'ai-av">F';
-  html += '</div><div class="msg-content"><div class="msg-bubble ';
-  html += role === 'user' ? 'user-bubble' : 'ai-bubble';
-  html += '">';
-  
-  // Escape HTML in content
-  const tempDiv = document.createElement('div');
-  tempDiv.textContent = content;
-  html += tempDiv.innerHTML;
-  
-  html += '</div><div class="msg-time">';
-  html += role === 'user' ? 'You' : 'First Principles';
-  html += ' · ' + time + '</div></div>';
-  
-  msgDiv.innerHTML = html;
-  chatEl.appendChild(msgDiv);
-  
-  scrollToBottom();
-  return msgDiv;
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  return response.json();
 }
 
-// Update phase indicator
-function updatePhase() {
-  if (!phasePill || !phaseText) return;
-  
-  phasePill.style.display = 'flex';
-  const phase = Math.min(Math.floor(questionCount / 2) + 1, 5);
-  phaseText.textContent = 'Phase ' + phase;
-  
-  // Update session subtitle
-  const sessionSub = document.getElementById('session-sub');
-  if (sessionSub) {
-    sessionSub.textContent = 'Question ' + (questionCount + 1) + ' of ~10';
+async function checkSupabaseHealth() {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/health`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      apiStatus.textContent = '✓ Supabase 已连接';
+      apiStatus.classList.remove('error');
+      return true;
+    } else {
+      throw new Error('Health check failed');
+    }
+  } catch (error) {
+    apiStatus.textContent = '✗ 连接失败';
+    apiStatus.classList.add('error');
+    console.error('Supabase health check failed:', error);
+    return false;
   }
 }
 
-// Handle sending message
-async function handleSendMessage() {
-  console.log('Send button clicked');
-  
-  if (!userInput || !sendBtn) {
-    console.error('Missing required elements');
-    return;
-  }
-  
-  const text = userInput.value.trim();
-  console.log('Input text:', text);
-  
-  if (!text) {
-    console.log('Empty input, ignoring');
-    return;
-  }
-  
-  if (isStreaming) {
-    console.log('Already sending, ignoring');
-    return;
-  }
-  
-  // ============================================
-  // 1. IMMEDIATE USER FEEDBACK
-  // ============================================
-  isStreaming = true;
-  sendBtn.disabled = true;
-  
-  // Save message
-  messages.push({ role: 'user', content: text });
-  
-  // Immediately show user message
-  console.log('Showing user message immediately');
-  addMessage('user', text);
-  
-  // Clear input
+// ==================== UI 更新 ====================
+function addMessageToUI(role, content) {
+  const msgGroup = document.createElement('div');
+  msgGroup.className = `msg-group ${role === 'user' ? 'user-msg' : ''}`;
+
+  const msgAv = document.createElement('div');
+  msgAv.className = `msg-av ${role === 'user' ? 'u-av' : 'ai-av'}`;
+  msgAv.textContent = role === 'user' ? 'U' : 'FP';
+
+  const msgContent = document.createElement('div');
+  msgContent.className = 'msg-content';
+
+  const msgBubble = document.createElement('div');
+  msgBubble.className = `msg-bubble ${role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
+  msgBubble.textContent = content;
+
+  const msgTime = document.createElement('div');
+  msgTime.className = 'msg-time';
+  msgTime.textContent = new Date().toLocaleTimeString();
+
+  msgContent.appendChild(msgBubble);
+  msgContent.appendChild(msgTime);
+
+  msgGroup.appendChild(msgAv);
+  msgGroup.appendChild(msgContent);
+
+  chatMessages.appendChild(msgGroup);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTyping() {
+  const typingRow = document.createElement('div');
+  typingRow.className = 'typing-row';
+  typingRow.id = 'typingIndicator';
+  typingRow.innerHTML = `
+    <div class="msg-av ai-av">FP</div>
+    <div class="typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+  `;
+  chatMessages.appendChild(typingRow);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function hideTyping() {
+  const typing = document.getElementById('typingIndicator');
+  if (typing) typing.remove();
+}
+
+// ==================== 消息发送 ====================
+async function sendMessage() {
+  const content = userInput.value.trim();
+  if (!content) return;
+
+  // 清空输入框
   userInput.value = '';
   userInput.style.height = 'auto';
-  
-  // Update phase
-  updatePhase();
-  
-  // ============================================
-  // 2. ASYNC AI PROCESSING
-  // ============================================
-  console.log('Starting AI processing');
-  
-  // Show typing indicator
+
+  // 移除空状态
+  const emptyState = chatMessages.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  // 添加用户消息到 UI
+  messages.push({ role: 'user', content });
+  addMessageToUI('user', content);
+
+  // 禁用发送按钮
+  sendBtn.disabled = true;
+
+  // 显示正在输入
   showTyping();
-  
+
   try {
-    // Call AI API
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: messages,
-        conversationId: null
-      })
-    });
-    
-    console.log('API response status:', response.status);
-    
-    if (!response.ok) {
-      throw new Error('API returned ' + response.status);
-    }
-    
-    // Remove typing indicator
-    removeTyping();
+    // 调用 Supabase API
+    const response = await callSupabaseChat(messages);
 
-    // Read SSE stream
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantContent = '';
+    // 隐藏正在输入
+    hideTyping();
 
-    // Create message bubble for streaming
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'msg-group';
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    msgDiv.innerHTML = '<div class="msg-av ai-av">F</div><div class="msg-content"><div class="msg-bubble ai-bubble"></div><div class="msg-time">First Principles · ' + time + '</div></div>';
-    chatEl.appendChild(msgDiv);
-    const bubbleContent = msgDiv.querySelector('.msg-bubble');
-    scrollToBottom();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') break;
-
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.content) {
-              assistantContent += parsed.content;
-              if (bubbleContent) {
-                bubbleContent.textContent = assistantContent;
-              }
-              scrollToBottom();
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-      }
+    // 添加 AI 回复到 UI
+    if (response.content) {
+      messages.push({ role: 'assistant', content: response.content });
+      addMessageToUI('assistant', response.content);
     }
 
-    messages.push({ role: 'assistant', content: assistantContent });
-    questionCount++;
-
-    console.log('AI response shown, question count:', questionCount);
-    
+    // 更新会话 ID（如果返回了）
+    if (response.conversationId) {
+      currentConversationId = response.conversationId;
+    }
   } catch (error) {
-    console.error('AI call failed:', error);
-    
-    // Remove typing indicator
-    removeTyping();
-    
-    // Show error message
-    addMessage('assistant', '⚠️ Error: ' + error.message + '. Please try again.');
+    hideTyping();
+    console.error('Failed to send message:', error);
+    addMessageToUI('assistant', '抱歉，连接到 Supabase 失败。请检查网络连接。');
   } finally {
-    // ============================================
-    // 3. RESET STATE
-    // ============================================
-    isStreaming = false;
     sendBtn.disabled = false;
-    
-    if (userInput) {
-      userInput.focus();
-    }
-    
-    console.log('Process completed, ready for next input');
   }
 }
 
-// Set up event listeners
-function setupEventListeners() {
-  console.log('Setting up event listeners');
-  
-  if (!sendBtn) {
-    console.error('sendBtn not found');
-    return;
-  }
-  
-  // Clone button to remove any existing listeners
-  const newBtn = sendBtn.cloneNode(true);
-  if (sendBtn.parentNode) {
-    sendBtn.parentNode.replaceChild(newBtn, sendBtn);
-  }
-  
-  // Get new reference
-  const fixedSendBtn = document.getElementById('send-btn');
-  
-  if (!fixedSendBtn) {
-    console.error('Failed to get fixed button');
-    return;
-  }
-  
-  // Add click listener
-  fixedSendBtn.addEventListener('click', function(event) {
-    event.preventDefault();
-    handleSendMessage();
-  });
-  
-  console.log('Click event listener added');
-  
-  // Enter key support
-  if (userInput) {
-    userInput.addEventListener('keydown', function(event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        console.log('Enter key pressed');
-        fixedSendBtn.click();
-      }
-    });
-    console.log('Enter key listener added');
-  }
-  
-  // Auto-resize textarea
-  if (userInput) {
-    userInput.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 130) + 'px';
-    });
-  }
+// ==================== 新对话 ====================
+function createNewConversation() {
+  currentConversationId = null;
+  messages = [];
+  chatMessages.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">🧠</div>
+      <div class="empty-title">Start a new thinking session</div>
+      <div class="empty-desc">Ask a question or describe a problem. I'll help you think through it using first principles.</div>
+    </div>
+  `;
 }
 
-// Initialize when page loads
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM fully loaded');
-    setupEventListeners();
-  });
-} else {
-  console.log('DOM already loaded');
-  setupEventListeners();
-}
+// ==================== 事件监听 ====================
+sendBtn.addEventListener('click', sendMessage);
 
-console.log('=== Script initialization complete ===');
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+userInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = (this.scrollHeight) + 'px';
+  sendBtn.disabled = !this.value.trim();
+});
+
+newChatBtn.addEventListener('click', createNewConversation);
+
+// ==================== 初始化 ====================
+document.addEventListener('DOMContentLoaded', async () => {
+  // 检查 Supabase 连接
+  await checkSupabaseHealth();
+
+  // 聚焦输入框
+  userInput.focus();
+});
 </script>
 </body>
 </html>
