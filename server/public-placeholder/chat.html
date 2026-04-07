@@ -386,9 +386,6 @@ async function callSupabaseChat(messages, userId = 'local-user') {
           } catch (e) {
             console.warn('Failed to parse SSE data:', data, e);
           }
-          } catch (e) {
-            console.warn('Failed to parse SSE data:', data, e);
-          }
         }
       }
     }
