@@ -70,8 +70,6 @@
   .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
   .send-btn svg { width: 13px; height: 13px; fill: #0A0A0B; }
   .input-hint { font-size: 11px; color: rgba(232,230,223,0.18); margin-top: 8px; text-align: center; }
-  .input-hint a { color: rgba(184,169,138,0.4); text-decoration: none; cursor: pointer; }
-  .input-hint a:hover { color: rgba(184,169,138,0.7); }
 
   .sidebar-right { border-left: 0.5px solid rgba(255,255,255,0.07); padding: 24px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
   .sidebar-right::-webkit-scrollbar { width: 3px; }
@@ -80,30 +78,19 @@
   .stepper { display: flex; flex-direction: column; }
   .step-row { display: flex; gap: 12px; }
   .step-left { display: flex; flex-direction: column; align-items: center; }
-  .step-circle { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; border: 0.5px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.025); color: rgba(232,230,223,0.18); }
+  .step-circle { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; border: 0.5px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.025); color: rgba(232,230,223,0.18); transition: all 0.3s ease; }
   .step-circle.s-done { background: rgba(184,169,138,0.1); border-color: rgba(184,169,138,0.35); color: #B8A98A; }
-  .step-circle.s-cur { background: #B8A98A; border-color: #B8A98A; color: #0A0A0B; font-weight: 700; }
-  .step-line { width: 0.5px; flex: 1; background: rgba(255,255,255,0.05); margin: 3px 0; min-height: 18px; }
+  .step-circle.s-cur { background: #B8A98A; border-color: #B8A98A; color: #0A0A0B; font-weight: 700; transform: scale(1.1); }
+  .step-line { width: 0.5px; flex: 1; background: rgba(255,255,255,0.05); margin: 3px 0; min-height: 18px; transition: background 0.3s ease; }
   .step-line.done { background: rgba(184,169,138,0.25); }
   .step-right { padding: 2px 0 18px; flex: 1; }
-  .step-name { font-size: 12px; color: rgba(232,230,223,0.35); }
+  .step-name { font-size: 12px; color: rgba(232,230,223,0.35); transition: color 0.3s ease; }
   .step-name.s-cur { color: #F0EDE4; font-weight: 500; }
-  .step-desc { font-size: 11px; color: rgba(232,230,223,0.18); margin-top: 2px; }
-
-  .assumption-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: rgba(226,75,74,0.04); border: 0.5px solid rgba(226,75,74,0.1); border-radius: 8px; margin-bottom: 6px; }
-  .x-mark { color: rgba(226,75,74,0.5); font-size: 11px; margin-top: 1px; flex-shrink: 0; }
-  .assumption-text { font-size: 12px; color: rgba(232,230,223,0.45); line-height: 1.45; }
-  .insight-card { background: rgba(184,169,138,0.04); border: 0.5px solid rgba(184,169,138,0.12); border-left: 2px solid rgba(184,169,138,0.5); border-radius: 0 8px 8px 0; padding: 12px 14px; }
-  .insight-quote { font-family: 'Lora', serif; font-style: italic; font-size: 13px; color: rgba(232,230,223,0.6); line-height: 1.6; }
-  .insight-attr { font-size: 10px; color: rgba(184,169,138,0.35); margin-top: 6px; }
-  .preview-btn { width: 100%; margin-top: auto; background: rgba(184,169,138,0.04); border: 0.5px solid rgba(184,169,138,0.12); color: rgba(184,169,138,0.45); padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; display: none; }
-  .preview-btn:hover { color: rgba(184,169,138,0.7); border-color: rgba(184,169,138,0.22); }
-  .preview-btn.visible { display: block; }
+  .step-desc { font-size: 11px; color: rgba(232,230,223,0.18); transition: color 0.3s ease; }
+  .step-name.s-cur + .step-desc { color: rgba(184,169,138,0.4); }
 
   .api-status { padding: 12px 14px; background: rgba(34,197,94,0.04); border: 0.5px solid rgba(34,197,94,0.12); border-radius: 8px; font-size: 11px; color: rgba(34,197,94,0.6); }
   .api-status.error { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.12); color: rgba(239,68,68,0.6); }
-  .loading-spinner { border: 2px solid rgba(255,255,255,0.05); border-top: 2px solid #B8A98A; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite; }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
   .empty-state { text-align: center; padding: 60px 28px; }
   .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
@@ -136,7 +123,7 @@
       </div>
       <div class="phase-pill">
         <div class="phase-dot"></div>
-        <span class="phase-text">THINKING</span>
+        <span class="phase-text" id="phaseText">THINKING</span>
       </div>
     </div>
 
@@ -163,7 +150,7 @@
     <div>
       <div class="panel-label">THINKING FRAMEWORK</div>
       <div class="stepper" id="stepper">
-        <div class="step-row">
+        <div class="step-row" data-step="1">
           <div class="step-left">
             <div class="step-circle s-cur">1</div>
             <div class="step-line"></div>
@@ -173,7 +160,7 @@
             <div class="step-desc">Grasp the core problem</div>
           </div>
         </div>
-        <div class="step-row">
+        <div class="step-row" data-step="2">
           <div class="step-left">
             <div class="step-circle">2</div>
             <div class="step-line"></div>
@@ -183,7 +170,7 @@
             <div class="step-desc">Break down assumptions</div>
           </div>
         </div>
-        <div class="step-row">
+        <div class="step-row" data-step="3">
           <div class="step-left">
             <div class="step-circle">3</div>
             <div class="step-line"></div>
@@ -193,7 +180,7 @@
             <div class="step-desc">Build from first principles</div>
           </div>
         </div>
-        <div class="step-row">
+        <div class="step-row" data-step="4">
           <div class="step-left">
             <div class="step-circle">4</div>
           </div>
@@ -210,11 +197,12 @@
 <script>
 // ==================== 配置 ====================
 const SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_wnQx8LZ7qUgVAsVOaEnuVQ_Ede5tM3w';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtc3RrbGZibnlldnV5eGlkbWh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE5MjIxNywiZXhwIjoyMDkwNzY4MjE3fQ.vOF2sa_QnbJ4r510GnAn4I3ZtPiRjXXj2yyhEhU7Pnc';
 
 // ==================== 状态管理 ====================
 let currentConversationId = null;
 let messages = [];
+let currentPhase = 1; // 当前阶段 1-4
 
 // ==================== DOM 元素 ====================
 const userInput = document.getElementById('userInput');
@@ -222,6 +210,96 @@ const sendBtn = document.getElementById('sendBtn');
 const chatMessages = document.getElementById('chatMessages');
 const newChatBtn = document.getElementById('newChatBtn');
 const apiStatus = document.getElementById('apiStatus');
+const stepper = document.getElementById('stepper');
+const phaseText = document.getElementById('phaseText');
+
+// ==================== Stepper 管理 ====================
+
+/**
+ * 从 AI 回复中检测当前阶段
+ * 基于关键词和上下文判断
+ */
+function detectPhaseFromText(text) {
+  const lowerText = text.toLowerCase();
+  
+  // 阶段关键词映射
+  const phaseKeywords = {
+    1: ['understand', 'grasp', 'comprehend', 'clarify', '明白', '理解', '了解', '澄清'],
+    2: ['assumption', 'break down', 'deconstruct', 'challenge', '假设', '打破', '拆解', '质疑'],
+    3: ['rebuild', 'first principles', 'fundamental', 'reconstruct', '重建', '第一性原理', '基本原理', '重构'],
+    4: ['action', 'next step', 'implement', 'execute', '行动', '实施', '执行', '下一步']
+  };
+  
+  // 计算每个阶段的关键词匹配度
+  const scores = {};
+  for (const [phase, keywords] of Object.entries(phaseKeywords)) {
+    scores[phase] = keywords.filter(keyword => lowerText.includes(keyword)).length;
+  }
+  
+  // 找出得分最高的阶段
+  let maxScore = 0;
+  let detectedPhase = currentPhase; // 默认保持当前阶段
+  
+  for (const [phase, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
+      detectedPhase = parseInt(phase);
+    }
+  }
+  
+  // 如果没有明确关键词，根据对话轮数推测
+  if (maxScore === 0) {
+    const messageCount = messages.filter(m => m.role === 'assistant').length;
+    if (messageCount >= 6) detectedPhase = 4;
+    else if (messageCount >= 4) detectedPhase = 3;
+    else if (messageCount >= 2) detectedPhase = 2;
+    else detectedPhase = 1;
+  }
+  
+  // 只能向前推进，不能后退
+  return Math.max(detectedPhase, currentPhase);
+}
+
+/**
+ * 更新 Stepper UI
+ * @param {number} phase - 当前阶段 (1-4)
+ */
+function updateStepper(phase) {
+  if (phase === currentPhase) return; // 没有变化，不需要更新
+  
+  currentPhase = phase;
+  
+  // 更新阶段文本
+  const phaseNames = ['', 'UNDERSTAND', 'DECONSTRUCT', 'REBUILD', 'ACT'];
+  phaseText.textContent = phaseNames[phase];
+  
+  // 更新所有步骤的状态
+  const steps = stepper.querySelectorAll('.step-row');
+  steps.forEach((step, index) => {
+    const stepNum = index + 1;
+    const circle = step.querySelector('.step-circle');
+    const line = step.querySelector('.step-line');
+    const name = step.querySelector('.step-name');
+    
+    // 清除所有状态类
+    circle.classList.remove('s-done', 's-cur');
+    line?.classList.remove('done');
+    name.classList.remove('s-cur');
+    
+    if (stepNum < phase) {
+      // 已完成的步骤
+      circle.classList.add('s-done');
+      line?.classList.add('done');
+    } else if (stepNum === phase) {
+      // 当前步骤
+      circle.classList.add('s-cur');
+      name.classList.add('s-cur');
+    }
+    // 后续步骤保持默认状态
+  });
+  
+  console.log(`📍 Phase updated: ${phase} - ${phaseNames[phase]}`);
+}
 
 // ==================== API 调用 ====================
 async function callSupabaseChat(messages, userId = 'local-user') {
@@ -241,7 +319,64 @@ async function callSupabaseChat(messages, userId = 'local-user') {
     throw new Error(`API error: ${response.status}`);
   }
 
-  return response.json();
+  // 处理 SSE 流式响应
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullContent = '';
+  let conversationId = null;
+  let lastContent = ''; // 用于阶段检测的临时变量
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            
+            if (parsed.conversationId) {
+              conversationId = parsed.conversationId;
+            }
+
+            if (parsed.content) {
+              fullContent += parsed.content;
+              lastContent = fullContent;
+              
+              // 实时检测并更新阶段（每收到一些内容就检测）
+              if (fullContent.length % 100 < 20) { // 每约100字符检测一次
+                const detectedPhase = detectPhaseFromText(fullContent);
+                if (detectedPhase !== currentPhase) {
+                  updateStepper(detectedPhase);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to parse SSE data:', data);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error reading SSE stream:', e);
+  }
+  
+  // 最终再检测一次，确保阶段准确
+  const finalPhase = detectPhaseFromText(fullContent);
+  updateStepper(finalPhase);
+
+  return {
+    content: fullContent,
+    conversationId: conversationId
+  };
 }
 
 async function checkSupabaseHealth() {
@@ -323,38 +458,28 @@ async function sendMessage() {
   const content = userInput.value.trim();
   if (!content) return;
 
-  // 清空输入框
   userInput.value = '';
   userInput.style.height = 'auto';
 
-  // 移除空状态
   const emptyState = chatMessages.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
 
-  // 添加用户消息到 UI
   messages.push({ role: 'user', content });
   addMessageToUI('user', content);
 
-  // 禁用发送按钮
   sendBtn.disabled = true;
-
-  // 显示正在输入
   showTyping();
 
   try {
-    // 调用 Supabase API
     const response = await callSupabaseChat(messages);
 
-    // 隐藏正在输入
     hideTyping();
 
-    // 添加 AI 回复到 UI
     if (response.content) {
       messages.push({ role: 'assistant', content: response.content });
       addMessageToUI('assistant', response.content);
     }
 
-    // 更新会话 ID（如果返回了）
     if (response.conversationId) {
       currentConversationId = response.conversationId;
     }
@@ -371,6 +496,9 @@ async function sendMessage() {
 function createNewConversation() {
   currentConversationId = null;
   messages = [];
+  currentPhase = 1; // 重置阶段
+  updateStepper(1); // 重置 UI
+  
   chatMessages.innerHTML = `
     <div class="empty-state">
       <div class="empty-icon">🧠</div>
@@ -400,11 +528,10 @@ newChatBtn.addEventListener('click', createNewConversation);
 
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', async () => {
-  // 检查 Supabase 连接
   await checkSupabaseHealth();
-
-  // 聚焦输入框
   userInput.focus();
+  console.log('🚀 First Principles v3.0.0 - Supabase Serverless');
+  console.log('📍 Stepper 实时更新已启用');
 });
 </script>
 </body>
