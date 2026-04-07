@@ -342,7 +342,7 @@ async function callSupabaseChat(messages, userId = 'local-user') {
 
           try {
             const parsed = JSON.parse(data);
-            console.log('📦 Received data:', parsed); // 调试日志
+            console.log('📦 SSE chunk:', parsed); // 调试日志
             
             if (parsed.conversationId) {
               conversationId = parsed.conversationId;
@@ -350,22 +350,42 @@ async function callSupabaseChat(messages, userId = 'local-user') {
 
             // 处理阶段信息
             if (parsed.phase && typeof parsed.phase === 'number') {
-              console.log('📍 Phase detected:', parsed.phase);
+              console.log('📍 Phase in SSE:', parsed.phase);
               if (parsed.phase !== currentPhase) {
                 currentPhase = parsed.phase;
                 updateStepper(currentPhase);
               }
             }
 
-            // 处理内容
+            // 处理内容 - 可能是双重 JSON
             if (parsed.content) {
-              fullContent += parsed.content;
-              updateAIMessage(fullContent);
-            } else if (parsed.message) {
-              // 如果 AI 返回的是纯文本（在 message 字段中）
-              fullContent += parsed.message;
+              // 尝试解析 content 字段（可能包含 JSON）
+              try {
+                const innerParsed = JSON.parse(parsed.content);
+                if (innerParsed.content && innerParsed.phase) {
+                  // 双重 JSON: content 字段包含 JSON 字符串
+                  fullContent += innerParsed.content;
+                  console.log('📝 Double JSON detected, extracting content');
+                  
+                  // 更新阶段
+                  if (innerParsed.phase !== currentPhase) {
+                    currentPhase = innerParsed.phase;
+                    updateStepper(currentPhase);
+                  }
+                } else {
+                  // content 是纯文本
+                  fullContent += parsed.content;
+                }
+              } catch (e) {
+                // content 不是 JSON，当作纯文本
+                fullContent += parsed.content;
+              }
+              
               updateAIMessage(fullContent);
             }
+          } catch (e) {
+            console.warn('Failed to parse SSE data:', data, e);
+          }
           } catch (e) {
             console.warn('Failed to parse SSE data:', data, e);
           }
@@ -384,34 +404,59 @@ async function callSupabaseChat(messages, userId = 'local-user') {
 
 // 检测并解析 JSON 格式的回复
 function parseAIResponse(text) {
+  console.log('🔍 Parsing response:', text.substring(0, 100)); // 调试日志
+  
   try {
-    // 尝试解析整个文本为 JSON
+    // 情况 1: 直接是 JSON 对象
     const parsed = JSON.parse(text);
     if (parsed.content && parsed.phase) {
+      console.log('✅ Direct JSON parsed:', parsed);
       return {
         content: parsed.content,
         phase: parsed.phase
       };
     }
   } catch (e) {
-    // 如果不是纯 JSON，尝试提取 JSON 部分
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.content && parsed.phase) {
-          return {
-            content: parsed.content,
-            phase: parsed.phase
-          };
-        }
-      } catch (e2) {
-        console.warn('Failed to parse extracted JSON:', e2);
-      }
-    }
+    // 继续尝试其他格式
   }
   
-  // 如果无法解析为 JSON，返回纯文本
+  try {
+    // 情况 2: content 字段包含 JSON 字符串（双重 JSON）
+    // 例如: {"content": "{\"phase\": 1, \"content\": \"text\"}"}
+    const outerParsed = JSON.parse(text);
+    if (outerParsed.content && typeof outerParsed.content === 'string') {
+      const innerParsed = JSON.parse(outerParsed.content);
+      if (innerParsed.content && innerParsed.phase) {
+        console.log('✅ Double JSON parsed:', innerParsed);
+        return {
+          content: innerParsed.content,
+          phase: innerParsed.phase
+        };
+      }
+    }
+  } catch (e) {
+    // 继续尝试
+  }
+  
+  try {
+    // 情况 3: 提取 JSON 部分
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.content && parsed.phase) {
+        console.log('✅ Extracted JSON parsed:', parsed);
+        return {
+          content: parsed.content,
+          phase: parsed.phase
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('❌ All parsing attempts failed');
+  }
+  
+  // 情况 4: 纯文本（不是 JSON）
+  console.log('⚠️  Treating as plain text');
   return {
     content: text,
     phase: null
