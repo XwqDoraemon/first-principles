@@ -1,25 +1,59 @@
-# build output
-dist/
-# generated types
-.astro/
+# .gitignore for First Principles Project
 
-# dependencies
+# Dependencies
 node_modules/
-
-# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+package-lock.json
+yarn.lock
 
-
-# environment variables
+# Environment variables
 .env
+.env.local
 .env.production
+.env.*.local
 
-# macOS-specific files
+# Build output
+dist/
+build/
+.output/
+.vercel/
+.netlify/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
 
-# jetbrains setting folder
-.idea/
-server/public-placeholder/chat-backup.html
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+sidebar_section.txt
+stepper_section.txt
+updateStepper_function.txt
+updateStepper_temp.txt
+
+# Supabase
+.supabase/
+
+# Cloudflare
+.wrangler/
+wrangler.toml.backup
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backup files
+*-backup.*
+*.backup
+*.bak
+chat-html-sqlite-backup.html
