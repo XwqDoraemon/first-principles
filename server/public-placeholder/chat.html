@@ -324,7 +324,7 @@ async function callSupabaseChat(messages, userId = 'local-user') {
   const decoder = new TextDecoder();
   let fullContent = '';
   let conversationId = null;
-  let lastContent = ''; // 用于阶段检测的临时变量
+  let currentPhase = 1;
 
   try {
     while (true) {
@@ -349,18 +349,22 @@ async function callSupabaseChat(messages, userId = 'local-user') {
 
             if (parsed.content) {
               fullContent += parsed.content;
-              lastContent = fullContent;
               
-              // 实时检测并更新阶段（每收到一些内容就检测）
-              if (fullContent.length % 100 < 20) { // 每约100字符检测一次
-                const detectedPhase = detectPhaseFromText(fullContent);
-                if (detectedPhase !== currentPhase) {
-                  updateStepper(detectedPhase);
-                }
-              }
+              // 实时更新 UI（显示部分内容）
+              updateAIMessage(fullContent);
+            }
+            
+            // 如果响应中包含阶段信息，立即更新 Stepper
+            if (parsed.phase && parsed.phase !== currentPhase) {
+              currentPhase = parsed.phase;
+              updateStepper(currentPhase);
             }
           } catch (e) {
-            console.warn('Failed to parse SSE data:', data);
+            // 如果不是 JSON，可能纯文本内容
+            if (data && !data.startsWith('{')) {
+              fullContent += data;
+              updateAIMessage(fullContent);
+            }
           }
         }
       }
@@ -368,15 +372,47 @@ async function callSupabaseChat(messages, userId = 'local-user') {
   } catch (e) {
     console.error('Error reading SSE stream:', e);
   }
-  
-  // 最终再检测一次，确保阶段准确
-  const finalPhase = detectPhaseFromText(fullContent);
-  updateStepper(finalPhase);
 
   return {
     content: fullContent,
     conversationId: conversationId
   };
+}
+
+// 临时函数：实时更新 AI 消息（用于流式响应）
+function updateAIMessage(content) {
+  let aiBubble = document.getElementById('currentAiBubble');
+  if (!aiBubble) {
+    // 创建新的 AI 消息气泡
+    const msgGroup = document.createElement('div');
+    msgGroup.className = 'msg-group';
+    
+    const msgAv = document.createElement('div');
+    msgAv.className = 'msg-av ai-av';
+    msgAv.textContent = 'FP';
+    
+    const msgContent = document.createElement('div');
+    msgContent.className = 'msg-content';
+    
+    aiBubble = document.createElement('div');
+    aiBubble.className = 'msg-bubble ai-bubble';
+    aiBubble.id = 'currentAiBubble';
+    
+    const msgTime = document.createElement('div');
+    msgTime.className = 'msg-time';
+    msgTime.textContent = new Date().toLocaleTimeString();
+    
+    msgContent.appendChild(aiBubble);
+    msgContent.appendChild(msgTime);
+    msgGroup.appendChild(msgAv);
+    msgGroup.appendChild(msgContent);
+    
+    chatMessages.appendChild(msgGroup);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  
+  aiBubble.textContent = content;
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 async function checkSupabaseHealth() {
@@ -464,8 +500,15 @@ async function sendMessage() {
   const emptyState = chatMessages.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
 
+  // 添加用户消息
   messages.push({ role: 'user', content });
   addMessageToUI('user', content);
+
+  // 移除之前的 AI 气泡（如果有）
+  const oldBubble = document.getElementById('currentAiBubble');
+  if (oldBubble) {
+    oldBubble.closest('.msg-group')?.remove();
+  }
 
   sendBtn.disabled = true;
   showTyping();
@@ -475,9 +518,15 @@ async function sendMessage() {
 
     hideTyping();
 
+    // 移除临时气泡，添加最终消息
+    const tempBubble = document.getElementById('currentAiBubble');
+    if (tempBubble) {
+      tempBubble.id = ''; // 移除临时 ID
+    }
+
     if (response.content) {
       messages.push({ role: 'assistant', content: response.content });
-      addMessageToUI('assistant', response.content);
+      // 不需要再次添加到 UI，因为已经在流式响应中添加了
     }
 
     if (response.conversationId) {
