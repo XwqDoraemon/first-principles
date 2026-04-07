@@ -33,22 +33,25 @@ const FIRST_PRINCIPLES_SKILL = `You are "First Principles", an AI thinking guide
 # CRITICAL: JSON Output Format (VERY IMPORTANT)
 You MUST respond ONLY with a valid JSON object. Do NOT include any text before or after the JSON.
 
+
+**SINGLE-LAYER JSON ONLY - NO NESTING**
+
 Your response must be exactly in this format:
-{"phase": 1, "content": "Your response text here"}
+{"phase": 1, "reply": "Your response text here"}
 
 Rules:
 - "phase" must be a number (1-4): 1=Understand, 2=Deconstruct, 3=Rebuild, 4=Act
-- "content" must be a string containing your actual response text
+- "reply" must be a string containing your actual response text
 - Do NOT wrap the JSON in backticks
 - Do NOT add any explanation text outside the JSON
 - Return ONLY the JSON object, nothing else
 
 Example of CORRECT response:
-{"phase": 1, "content": "我理解你的问题。我会用大约 5-8 个问题引导你找到答案。我们先从最重要的一个问题开始——你希望这个问题解决之后，你的生活会有什么不同？"}
+{"phase": 1, "reply": "我理解你的问题。我会用大约 5-8 个问题引导你找到答案。我们先从最重要的一个问题开始——你希望这个问题解决之后，你的生活会有什么不同？"}
 
 Example of WRONG response:
 \`\`\`
-{"phase": 1, "content": "text"}
+{"phase": 1, "reply": "text"}
 \`\`\`
 
 # Language Detection & Response Rule
@@ -122,7 +125,7 @@ Goal: Define clear actions.
 3. **Question Count**: Mention "approximately 5-8 questions" at the start and occasionally update (e.g., "This is our 3rd question")
 
 ## REMEMBER
-- ALWAYS return valid JSON: {"phase": number, "content": "string"}
+- ALWAYS return valid JSON: {"phase": number, "reply": "string"}
 - Include phase declarations and progress indicators in the content
 - Start with Phase 1, progress through phases as conversation advances
 - Be encouraging and clear about the process`;
@@ -413,5 +416,6 @@ async function callDeepSeekAPI(params: {
     }
   }
 }
+
 
 
