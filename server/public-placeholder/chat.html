@@ -112,13 +112,13 @@
   <aside class="sidebar-left">
     <div class="sidebar-section-label">SESSIONS</div>
     <div id="historyList"></div>
-    <button class="new-chat-btn" id="newChatBtn">＋ New Session</button>
+    <button class="new-chat-btn" id="newChatBtn">＋ Start thinking</button>
   </aside>
 
   <main class="chat-main">
     <div class="chat-top-bar">
       <div class="session-info">
-        <div class="session-title" id="sessionTitle">New Session</div>
+        <div class="session-title" id="sessionTitle">Start thinking</div>
         <div class="session-sub" id="sessionSub">First-principles thinking framework</div>
       </div>
       <div class="phase-pill">
@@ -647,6 +647,12 @@ function createNewConversation() {
   messages = [];
   currentPhase = 1; // 重置阶段
   updateStepper(1); // 重置 UI
+  
+  // 更新标题
+  const sessionTitle = document.getElementById('sessionTitle');
+  if (sessionTitle) {
+    sessionTitle.textContent = 'Start thinking';
+  }
   
   chatMessages.innerHTML = `
     <div class="empty-state">
