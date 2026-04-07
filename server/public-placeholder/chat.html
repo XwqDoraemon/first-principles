@@ -342,29 +342,32 @@ async function callSupabaseChat(messages, userId = 'local-user') {
 
           try {
             const parsed = JSON.parse(data);
+            console.log('📦 Received data:', parsed); // 调试日志
             
             if (parsed.conversationId) {
               conversationId = parsed.conversationId;
             }
 
+            // 处理阶段信息
+            if (parsed.phase && typeof parsed.phase === 'number') {
+              console.log('📍 Phase detected:', parsed.phase);
+              if (parsed.phase !== currentPhase) {
+                currentPhase = parsed.phase;
+                updateStepper(currentPhase);
+              }
+            }
+
+            // 处理内容
             if (parsed.content) {
               fullContent += parsed.content;
-              
-              // 实时更新 UI（显示部分内容）
               updateAIMessage(fullContent);
-            }
-            
-            // 如果响应中包含阶段信息，立即更新 Stepper
-            if (parsed.phase && parsed.phase !== currentPhase) {
-              currentPhase = parsed.phase;
-              updateStepper(currentPhase);
+            } else if (parsed.message) {
+              // 如果 AI 返回的是纯文本（在 message 字段中）
+              fullContent += parsed.message;
+              updateAIMessage(fullContent);
             }
           } catch (e) {
-            // 如果不是 JSON，可能纯文本内容
-            if (data && !data.startsWith('{')) {
-              fullContent += data;
-              updateAIMessage(fullContent);
-            }
+            console.warn('Failed to parse SSE data:', data, e);
           }
         }
       }
@@ -376,6 +379,42 @@ async function callSupabaseChat(messages, userId = 'local-user') {
   return {
     content: fullContent,
     conversationId: conversationId
+  };
+}
+
+// 检测并解析 JSON 格式的回复
+function parseAIResponse(text) {
+  try {
+    // 尝试解析整个文本为 JSON
+    const parsed = JSON.parse(text);
+    if (parsed.content && parsed.phase) {
+      return {
+        content: parsed.content,
+        phase: parsed.phase
+      };
+    }
+  } catch (e) {
+    // 如果不是纯 JSON，尝试提取 JSON 部分
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.content && parsed.phase) {
+          return {
+            content: parsed.content,
+            phase: parsed.phase
+          };
+        }
+      } catch (e2) {
+        console.warn('Failed to parse extracted JSON:', e2);
+      }
+    }
+  }
+  
+  // 如果无法解析为 JSON，返回纯文本
+  return {
+    content: text,
+    phase: null
   };
 }
 
@@ -518,15 +557,34 @@ async function sendMessage() {
 
     hideTyping();
 
-    // 移除临时气泡，添加最终消息
+    // 移除临时气泡的 ID（但保留消息本身）
     const tempBubble = document.getElementById('currentAiBubble');
     if (tempBubble) {
-      tempBubble.id = ''; // 移除临时 ID
+      tempBubble.removeAttribute('id'); // 移除 ID，但保留在 DOM 中
     }
 
+    // 注意：内容已经在流式响应中显示在 tempBubble 中了
+    // 这里只需要：
+    // 1. 解析并更新阶段（如果有）
+    // 2. 将消息添加到 messages 数组
+    // 3. 不要再次添加到 UI（避免重复显示）
+
     if (response.content) {
-      messages.push({ role: 'assistant', content: response.content });
-      // 不需要再次添加到 UI，因为已经在流式响应中添加了
+      // 尝试解析 JSON 格式以提取阶段
+      const parsed = parseAIResponse(response.content);
+      
+      // 使用纯文本内容（去掉可能的 JSON 包装）
+      const finalContent = parsed.content || response.content;
+      
+      // 添加到 messages 数组
+      messages.push({ role: 'assistant', content: finalContent });
+      
+      // 更新阶段（如果有）
+      if (parsed.phase && parsed.phase !== currentPhase) {
+        updateStepper(parsed.phase);
+      }
+      
+      // 注意：不调用 addMessageToUI，因为内容已经在流式响应中显示了
     }
 
     if (response.conversationId) {
