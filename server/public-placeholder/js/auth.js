@@ -3,7 +3,12 @@
 const SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtc3RrbGZibnlldnV5eGlkbWh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE5MjIxNywiZXhwIjoyMDkwNzY4MjE3fQ.vOF2sa_QnbJ4r510GnAn4I3ZtPiRjXXj2yyhEhU7Pnc';
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 创建全局 supabase 客户端
+if (typeof supabase !== 'undefined') {
+  window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+const supabaseClient = window.supabase;
 
 // ==================== 认证状态管理 ====================
 
@@ -13,10 +18,9 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  */
 async function getCurrentUser() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
     return user;
   } catch (error) {
-    console.error('Error getting user:', error);
     return null;
   }
 }
@@ -26,7 +30,7 @@ async function getCurrentUser() {
  * @param {Function} callback - 状态变化回调
  */
 function onAuthStateChange(callback) {
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     callback(event, session?.user || null);
   });
 }
@@ -38,7 +42,7 @@ function onAuthStateChange(callback) {
  */
 async function signInWithGoogle() {
   try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/chat.html`,
@@ -50,11 +54,7 @@ async function signInWithGoogle() {
     });
 
     if (error) throw error;
-    
-    // Supabase 会自动重定向到 Google
-    console.log('Redirecting to Google OAuth...');
   } catch (error) {
-    console.error('Error signing in with Google:', error);
     alert('登录失败，请重试');
   }
 }
@@ -68,7 +68,7 @@ async function signInWithGoogle() {
  */
 async function signInWithEmail(email, password) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
     });
@@ -77,7 +77,6 @@ async function signInWithEmail(email, password) {
     
     return { success: true, user: data.user };
   } catch (error) {
-    console.error('Error signing in:', error);
     return { success: false, error: error.message };
   }
 }
@@ -89,7 +88,7 @@ async function signInWithEmail(email, password) {
  */
 async function signUpWithEmail(email, password) {
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
     });
@@ -98,7 +97,6 @@ async function signUpWithEmail(email, password) {
     
     return { success: true, user: data.user };
   } catch (error) {
-    console.error('Error signing up:', error);
     return { success: false, error: error.message };
   }
 }
@@ -110,13 +108,12 @@ async function signUpWithEmail(email, password) {
  */
 async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
     
     // 重定向到首页
     window.location.href = '/';
   } catch (error) {
-    console.error('Error signing out:', error);
     alert('退出失败，请重试');
   }
 }
@@ -142,12 +139,12 @@ function updateUserUI(user) {
     if (userName) userName.textContent = email;
     if (userAvatar && avatarUrl) userAvatar.src = avatarUrl;
     
-    userMenu.classList.remove('hidden');
-    userMenu.classList.add('logged-in');
+    userMenu.style.display = 'flex';
+    document.getElementById('authButtonContainer').style.display = 'none';
   } else {
     // 用户未登录
-    userMenu.classList.add('hidden');
-    userMenu.classList.remove('logged-in');
+    userMenu.style.display = 'none';
+    document.getElementById('authButtonContainer').style.display = 'block';
   }
 }
 
@@ -174,7 +171,7 @@ async function displayUserCredits() {
       }
     }
   } catch (error) {
-    console.error('Error fetching credits:', error);
+    // 忽略错误
   }
 }
 
@@ -186,7 +183,6 @@ async function displayUserCredits() {
 document.addEventListener('DOMContentLoaded', async () => {
   // 监听认证状态变化
   onAuthStateChange((event, user) => {
-    console.log('Auth event:', event, user);
     updateUserUI(user);
     
     if (user) {

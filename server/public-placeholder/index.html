@@ -612,7 +612,8 @@
 </div>
 
 <!-- Supabase Auth -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Auth Functions -->
 <script src="/js/auth.js"></script>
 <script>
@@ -637,6 +638,11 @@ window.onclick = function(event) {
     closeAuthModal();
   }
 }
+
+// 确保函数在全局作用域中可用
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.signInWithGoogle = signInWithGoogle;
 </script>
 </body>
 </html>
