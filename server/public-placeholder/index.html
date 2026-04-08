@@ -62,6 +62,55 @@
     font-size: 13px !important;
   }
 
+  /* 用户菜单 */
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(184,169,138,0.1);
+    border: 0.5px solid rgba(184,169,138,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #B8A98A;
+    font-size: 12px;
+  }
+  .user-name {
+    font-size: 13px;
+    color: rgba(232,230,223,0.7);
+  }
+  .user-credits {
+    font-size: 11px;
+    color: #B8A98A;
+    background: rgba(184,169,138,0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+  .auth-btn {
+    background: rgba(184,169,138,0.1);
+    border: 0.5px solid rgba(184,169,138,0.3);
+    color: #B8A98A;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .auth-btn:hover {
+    background: rgba(184,169,138,0.2);
+    border-color: rgba(184,169,138,0.5);
+  }
+
   /* LANDING */
   .landing {
     display: grid;
@@ -363,9 +412,22 @@
   <ul class="nav-links">
     <li><a href="/about">How it works</a></li>
     <li><a href="/pricing">Pricing</a></li>
+    <li id="userMenu" class="user-menu" style="display: none;">
+      <div class="user-info">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-name" id="userName"></div>
+        <div class="user-credits" id="userCredits">0 积分</div>
+      </div>
+    </li>
+    <li id="authButtonContainer">
+      <button class="auth-btn" onclick="openAuthModal()">登录</button>
+    </li>
     <li><a href="chat.html" class="nav-cta">Start thinking</a></li>
   </ul>
 </nav>
+
+<!-- 认证模态框 -->
+<div id="authModalContainer"></div>
 
 <div class="landing">
   <div class="hero-left">
@@ -441,10 +503,21 @@
   </div>
 </div>
 
+<!-- Supabase Auth -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Auth Functions -->
+<script src="/js/auth.js"></script>
 <script>
 function startSession() {
   window.location.href = '/chat.html';
 }
+
+// 加载认证模态框
+fetch('/auth-modal.html')
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById('authModalContainer').innerHTML = html;
+  });
 </script>
 </body>
 </html>
