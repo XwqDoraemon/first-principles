@@ -42,10 +42,13 @@ function onAuthStateChange(callback) {
  */
 async function signInWithGoogle() {
   try {
+    // 保存当前页面 URL，登录后返回这里
+    const currentUrl = window.location.href;
+    
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: currentUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
