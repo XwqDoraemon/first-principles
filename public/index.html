@@ -16,25 +16,32 @@
     overflow-x: hidden;
   }
 
-  /* NAV */
+  /* NAV - 统一导航栏样式 */
   nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 40px;
+    padding: 16px 32px;
     border-bottom: 0.5px solid rgba(255,255,255,0.08);
     position: sticky;
     top: 0;
     background: rgba(10,10,11,0.92);
     backdrop-filter: blur(12px);
     z-index: 100;
+    height: 56px;
+  }
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
   }
   .logo {
     font-family: 'Lora', serif;
-    font-size: 20px;
+    font-size: 18px;
     letter-spacing: -0.3px;
     color: #F0EDE4;
     text-decoration: none;
+    flex-shrink: 0;
   }
   .logo span { color: #B8A98A; font-style: italic; }
   .nav-links {
@@ -60,6 +67,12 @@
     border-radius: 20px;
     font-weight: 500 !important;
     font-size: 13px !important;
+  }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
   }
 
   /* 用户菜单 */
@@ -488,22 +501,26 @@
 <body>
 
 <nav>
-  <a href="/" class="logo">First <span>Principles</span></a>
-  <ul class="nav-links">
-    <li><a href="/about">How it works</a></li>
-    <li><a href="/pricing">Pricing</a></li>
-    <li id="userMenu" class="user-menu" style="display: none;">
+  <div class="nav-left">
+    <a href="/" class="logo">First <span>Principles</span></a>
+    <ul class="nav-links">
+      <li><a href="/about">How it works</a></li>
+      <li><a href="/pricing">Pricing</a></li>
+    </ul>
+  </div>
+  <div class="nav-right">
+    <div id="userMenu" class="user-menu" style="display: none;">
       <div class="user-info">
-        <div class="user-avatar" id="userAvatar">U</div>
-        <div class="user-name" id="userName"></div>
         <div class="user-credits" id="userCredits">0 积分</div>
+        <div class="user-name" id="userName"></div>
+        <div class="user-avatar" id="userAvatar">U</div>
       </div>
-    </li>
-    <li id="authButtonContainer">
+    </div>
+    <div id="authButtonContainer">
       <button class="auth-btn" onclick="openAuthModal()">登录</button>
-    </li>
-    <li><a href="chat.html" class="nav-cta">Start thinking</a></li>
-  </ul>
+    </div>
+    <a href="chat.html" class="nav-cta">Start thinking</a>
+  </div>
 </nav>
 
 <!-- 认证模态框 -->
