@@ -42,10 +42,18 @@ function onAuthStateChange(callback) {
  */
 async function signInWithGoogle() {
   try {
+    // 根据当前环境选择回调地址
+    const isLocal = window.location.hostname === 'localhost' || 
+                   window.location.hostname === '43.153.79.127' ||
+                   window.location.protocol === 'http:';
+    const redirectUrl = isLocal 
+      ? `${window.location.origin}/chat.html`
+      : 'https://firstprinciples.site/chat.html';
+    
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://firstprinciples.site/chat.html',
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
