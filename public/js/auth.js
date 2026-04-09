@@ -45,7 +45,7 @@ async function signInWithGoogle() {
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/chat.html`,
+        redirectTo: 'https://firstprinciples.site/chat.html',
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
