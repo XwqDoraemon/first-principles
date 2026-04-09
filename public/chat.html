@@ -870,5 +870,15 @@ window.closeAuthModal = closeAuthModal;
   .google-btn { background: #fff; color: #0A0A0B; }
   .google-btn:hover { background: rgba(255, 255, 255, 0.9); }
 </style>
+
+<!-- Supabase Auth -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth.js"></script>
+<script>
+// 确保函数在全局作用域中可用
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.signInWithGoogle = signInWithGoogle;
+</script>
 </body>
 </html>
