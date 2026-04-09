@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "node server/index.cjs",
     "start": "node server/index.cjs",
-    "build": "astro build",
+    "build": "",
     "preview": "astro preview",
     "astro": "astro"
   },
