@@ -56,11 +56,11 @@ git clone https://github.com/XwqDoraemon/first-principles.git
 cd first-principles
 
 # Install dependencies
+cd server
 npm install
 
 # Configure environment variables
-cp .env.example .env
-# Edit .env with your Supabase credentials
+# Edit ../.env with your Supabase credentials
 
 # Run development server
 npm run dev
@@ -74,15 +74,16 @@ Access at http://localhost:4322
 
 ```
 first-principles/
+├── public/                       # Cloudflare Pages 当前部署目录
+│   ├── index.html
+│   ├── chat.html
+│   ├── pricing.html
+│   └── js/
+│       ├── auth.js
+│       ├── payment.js
+│       └── paypal-payment.js
 ├── server/
-│   ├── index.cjs                 # Express server (local dev)
-│   └── public-placeholder/       # Static files
-│       ├── index.html
-│       ├── chat.html
-│       ├── pricing.html
-│       └── js/
-│           ├── payment.js
-│           └── paypal-payment.js
+│   └── index.cjs                 # 本地开发服务器（服务 public/）
 ├── supabase/
 │   ├── functions/
 │   │   ├── chat/                 # Chat API
@@ -151,7 +152,7 @@ first-principles/
 2. **Configure Build**
    ```
    Build command: (leave empty)
-   Build output directory: server/public-placeholder
+   Build output directory: public
    ```
 
 3. **Deploy**

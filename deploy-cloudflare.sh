@@ -10,7 +10,7 @@ echo ""
 
 # 配置
 PROJECT_NAME="first-principles"
-BUILD_DIR="server/public-placeholder"
+BUILD_DIR="public"
 BRANCH="main"
 
 echo "📦 项目名称: $PROJECT_NAME"

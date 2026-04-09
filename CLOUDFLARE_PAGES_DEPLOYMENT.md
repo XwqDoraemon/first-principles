@@ -41,14 +41,14 @@ Supabase PostgreSQL (数据库)
 生产分支：main
 框架预设：None
 构建命令：（留空）
-构建输出目录：server/public-placeholder
+构建输出目录：public
 环境变量：（留空）
 ```
 
 **重要配置**：
 - ✅ **Framework preset**: `None`
 - ✅ **Build command**: （空）
-- ✅ **Build output directory**: `server/public-placeholder`
+- ✅ **Build output directory**: `public`
 - ✅ **Root directory**: `/` (根目录)
 
 ---
@@ -200,8 +200,9 @@ https://first-principles.pages.dev/api/stripe/webhook
 
 | 特性 | 本地开发 | Cloudflare Pages |
 |------|----------|------------------|
-| **URL** | http://43.153.79.127:4322 | https://first-principles.pages.dev |
-| **后端** | Express (本地) | Supabase Edge Functions |
+| **URL** | http://localhost:4322 | https://first-principles.pages.dev |
+| **前端目录** | `public/` | `public/` |
+| **本地服务器** | Express (`server/index.cjs`) | Cloudflare Pages |
 | **数据库** | Supabase | Supabase |
 | **HTTPS** | ❌ | ✅ 自动 |
 | **CDN** | ❌ | ✅ 全球 CDN |

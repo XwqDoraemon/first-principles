@@ -271,8 +271,8 @@
 
 <script>
 // ==================== 配置 ====================
-const SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtc3RrbGZibnlldnV5eGlkbWh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE5MjIxNywiZXhwIjoyMDkwNzY4MjE3fQ.vOF2sa_QnbJ4r510GnAn4I3ZtPiRjXXj2yyhEhU7Pnc';
+const CHAT_SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co';
+const CHAT_SUPABASE_ANON_KEY = 'sb_publishable_wnQx8LZ7qUgVAsVOaEnuVQ_Ede5tM3w';
 
 // ==================== 状态管理 ====================
 let currentConversationId = null;
@@ -341,15 +341,30 @@ function detectPhaseFromText(text) {
 
 // ==================== API 调用 ====================
 async function callSupabaseChat(messages, userId = 'local-user') {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
+  let authToken = CHAT_SUPABASE_ANON_KEY;
+  let resolvedUserId = userId;
+
+  if (window.supabaseClient) {
+    try {
+      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      if (session?.access_token) {
+        authToken = session.access_token;
+        resolvedUserId = session.user?.id || userId;
+      }
+    } catch (error) {
+      console.warn('Failed to read auth session for chat request:', error);
+    }
+  }
+
+  const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      'Authorization': `Bearer ${authToken}`
     },
     body: JSON.stringify({
       messages: messages,
-      userId: userId
+      userId: resolvedUserId
     })
   });
 
@@ -548,10 +563,10 @@ async function checkSupabaseHealth() {
   const emptyDesc = document.getElementById('emptyDesc');
   
   try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/health`, {
+    const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/health`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${CHAT_SUPABASE_ANON_KEY}`
       }
     });
 
@@ -878,7 +893,6 @@ window.closeAuthModal = closeAuthModal;
 // 确保函数在全局作用域中可用
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
-window.signInWithGoogle = signInWithGoogle;
 </script>
 </body>
 </html>

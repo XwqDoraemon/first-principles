@@ -106,7 +106,7 @@ async function capturePayPalOrder(orderId) {
  */
 async function handlePayPalPayment(plan) {
   // 检查用户是否已登录
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await window.supabaseClient.auth.getUser()
   
   if (!user) {
     alert('请先登录以购买积分')

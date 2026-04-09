@@ -58,7 +58,7 @@
     <ul class="nav-links">
       <li><a href="/about">How it works</a></li>
       <li><a href="/pricing">Pricing</a></li>
-      <li><a href="chat.html" class="nav-cta">Start thinking</a></li>
+      <li><a href="/chat.html" class="nav-cta">Start thinking</a></li>
     </ul>
     <div id="userMenu" class="user-menu" style="display: none;">
       <div class="user-info">
@@ -133,7 +133,7 @@ async function load(){
   const list=document.getElementById('conv-list');
   try{
     const r=await fetch('/api/conversations');const c=await r.json();
-    if(!c.length){list.innerHTML='<div class="empty"><p>🧠</p><p>No sessions yet.</p><a href="/chat/new">Start your first session →</a></div>';return;}
+    if(!c.length){list.innerHTML='<div class="empty"><p>🧠</p><p>No sessions yet.</p><a href="/chat.html">Start your first session →</a></div>';return;}
     list.innerHTML=c.map(x=>`<a href="/chat/${x.id}" class="conv-item"><h3>${esc(x.title)}</h3><div class="meta">${x.msg_count} messages · ${fmtDate(x.updated_at)}</div></a>`).join('');
   }catch{list.innerHTML='<div class="empty"><p>Failed to load.</p></div>';}
 }

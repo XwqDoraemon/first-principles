@@ -90,7 +90,7 @@ function initStripe() {
  */
 async function handlePayment(plan) {
   // 检查用户是否已登录
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await window.supabaseClient.auth.getUser()
   
   if (!user) {
     alert('Please sign in first to purchase credits')

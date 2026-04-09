@@ -1,7 +1,7 @@
 name = "first-principles"
 compatibility_date = "2024-01-01"
 
-pages_build_output_dir = "server/public-placeholder"
+pages_build_output_dir = "public"
 
 [env.production]
 routes = [
