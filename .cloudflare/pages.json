@@ -1,6 +1,6 @@
 {
   "build": {
     "command": "",
-    "publish": "server/public-placeholder"
+    "publish": "public"
   }
 }

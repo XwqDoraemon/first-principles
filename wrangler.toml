@@ -4,7 +4,7 @@
 # 构建配置
 [build]
   # 发布目录（静态文件）
-  publish = "server/public-placeholder"
+  publish = "public"
   
   # 无需构建命令（纯静态文件）
   command = ""

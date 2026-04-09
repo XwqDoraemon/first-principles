@@ -38,7 +38,7 @@ app.get('/chat', serveHTML('chat.html'));
 app.get('/', serveHTML('index.html'));
 
 // ==================== 静态文件服务 ====================
-const publicDir = path.resolve(__dirname, 'public-placeholder');
+const publicDir = path.resolve(__dirname, '../public');
 app.use(express.static(publicDir));
 
 // ==================== Supabase 健康检查代理 ====================
