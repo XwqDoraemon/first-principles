@@ -27,9 +27,13 @@ const PRICING_PLANS = {
   },
 }
 
-corsHeaders = {
+const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+function matchesRoute(pathname: string, route: string) {
+  return pathname === route || pathname.endsWith(route)
 }
 
 serve(async (req) => {
@@ -44,7 +48,7 @@ serve(async (req) => {
     const path = url.pathname
 
     // 创建支付意图
-    if (method === 'POST' && path === '/create-payment-intent') {
+    if (method === 'POST' && matchesRoute(path, '/create-payment-intent')) {
       const { plan, userId } = await req.json()
 
       if (!plan || !userId) {
@@ -97,7 +101,7 @@ serve(async (req) => {
     }
 
     // Webhook 处理
-    if (method === 'POST' && path === '/webhook') {
+    if (method === 'POST' && matchesRoute(path, '/webhook')) {
       const body = await req.text()
       const signature = req.headers.get('Stripe-Signature')
 
@@ -167,7 +171,7 @@ serve(async (req) => {
     }
 
     // 获取用户积分余额
-    if (method === 'GET' && path === '/credits') {
+    if (method === 'GET' && matchesRoute(path, '/credits')) {
       const authHeader = req.headers.get('Authorization')
       if (!authHeader) {
         throw new Error('Missing authorization header')
@@ -200,7 +204,7 @@ serve(async (req) => {
       )
     }
 
-    return new Response('Not found', { status: 404 })
+    return new Response('Not found', { status: 404, headers: corsHeaders })
   } catch (error) {
     console.error('Error:', error)
     return new Response(

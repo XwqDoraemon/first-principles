@@ -75,12 +75,13 @@
 
   async function signInWithGoogle() {
     try {
-      const currentUrl = window.location.href;
+      const redirectUrl = `${window.location.origin}${window.location.pathname}`;
+      console.log('Google OAuth redirectTo:', redirectUrl);
 
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: currentUrl,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

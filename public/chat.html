@@ -434,19 +434,24 @@ async function getConversationAccessState() {
     return { session: null, credits: null };
   }
 
-  const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/payment/credits`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/payment/credits`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch credit status');
+    if (!response.ok) {
+      return { session, credits: null, creditsFetchFailed: true };
+    }
+
+    const credits = await response.json();
+    return { session, credits, creditsFetchFailed: false };
+  } catch (error) {
+    console.warn('Failed to fetch credit status before sending:', error);
+    return { session, credits: null, creditsFetchFailed: true };
   }
-
-  const credits = await response.json();
-  return { session, credits };
 }
 
 function openRechargeModal(message) {
@@ -464,7 +469,7 @@ function closeRechargeModal() {
 
 async function ensureReadyToSend() {
   const isNewConversation = !currentConversationId;
-  const { session, credits } = await getConversationAccessState();
+  const { session, credits, creditsFetchFailed } = await getConversationAccessState();
 
   if (!session?.user) {
     renderBillingNotice('登录后才能开始新的思考会话。登录成功后你会自动获得 2 次免费机会；Google 页面里若出现 `supabase.co`，属于官方安全认证跳转。', {
@@ -478,6 +483,11 @@ async function ensureReadyToSend() {
   if (!isNewConversation) {
     clearBillingNotice();
     return { allowed: true, session, credits };
+  }
+
+  if (creditsFetchFailed || !credits) {
+    renderBillingNotice('We could not verify your free sessions or credit balance in advance. You can continue, and the server will confirm access when you send your first message.');
+    return { allowed: true, session, credits: null };
   }
 
   const freeSessions = credits?.freeSessionsRemaining || 0;
@@ -828,10 +838,9 @@ async function sendMessage() {
     }
   } catch (error) {
     console.error('Failed to validate access before sending:', error);
-    renderBillingNotice('暂时无法校验你的登录状态或积分，请稍后重试。', {
+    renderBillingNotice('We could not pre-check your balance. You can try sending again, and the server will still enforce access rules.', {
       tone: 'error',
     });
-    return;
   }
 
   userInput.value = '';
@@ -1028,7 +1037,7 @@ window.closeRechargeModal = closeRechargeModal;
         首次登录将自动创建账户
       </p>
       <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4); margin-top: 8px; line-height: 1.6;">
-        如果 Google 提示继续前往 `supabase.co`，这是 First Principles 使用的官方认证托管服务，属于正常安全跳转。
+        If Google shows `supabase.co`, that is the official authentication service used by First Principles and part of the normal secure sign-in flow.
       </p>
     </div>
   </div>
