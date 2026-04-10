@@ -417,12 +417,22 @@ function clearBillingNotice() {
 
 async function getCurrentSessionSafe() {
   if (window.getCurrentSession) {
-    return await window.getCurrentSession();
+    const session = await window.getCurrentSession();
+    if (session?.user) {
+      return session;
+    }
   }
 
   if (window.supabaseClient?.auth) {
     const { data: { session } } = await window.supabaseClient.auth.getSession();
-    return session || null;
+    if (session?.user) {
+      return session;
+    }
+
+    const { data: { user } } = await window.supabaseClient.auth.getUser();
+    if (user) {
+      return { user };
+    }
   }
 
   return null;
@@ -439,9 +449,13 @@ async function getConversationAccessState() {
       method: 'GET',
       headers: {
         'apikey': CHAT_SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${session.access_token}`,
+        ...(session.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
       },
     });
+
+    if (response.status === 401) {
+      return { session, credits: null, creditsFetchFailed: true, unauthorized: true };
+    }
 
     if (!response.ok) {
       return { session, credits: null, creditsFetchFailed: true };
@@ -470,7 +484,7 @@ function closeRechargeModal() {
 
 async function ensureReadyToSend() {
   const isNewConversation = !currentConversationId;
-  const { session, credits, creditsFetchFailed } = await getConversationAccessState();
+  const { session, credits, creditsFetchFailed, unauthorized } = await getConversationAccessState();
 
   if (!session?.user) {
     renderBillingNotice('登录后才能开始新的思考会话。登录成功后你会自动获得 2 次免费机会；Google 页面里若出现 `supabase.co`，属于官方安全认证跳转。', {
@@ -479,6 +493,13 @@ async function ensureReadyToSend() {
     });
     window.openAuthModal?.();
     return { allowed: false, reason: 'auth' };
+  }
+
+  if (unauthorized) {
+    renderBillingNotice('Your login session could not be verified for a balance check. Please refresh once and try again. If you are out of credits, the server will still block new sessions safely.', {
+      tone: 'error',
+    });
+    return { allowed: true, session, credits: null };
   }
 
   if (!isNewConversation) {
