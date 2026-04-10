@@ -6,27 +6,25 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-// PayPal 配置
 const PAYPAL_CONFIG = {
   clientId: Deno.env.get('PAYPAL_CLIENT_ID') || '',
   clientSecret: Deno.env.get('PAYPAL_CLIENT_SECRET') || '',
-  baseUrl: Deno.env.get('PAYPAL_MODE') === 'live' 
+  baseUrl: Deno.env.get('PAYPAL_MODE') === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com',
 }
 
-// 价格配置（美元）
-const PRICING_PLANS = {
+const PRICING_PLANS: Record<string, { name: string; amount: number; credits: number; currency: string }> = {
   basic: {
     name: 'Basic Pack',
     amount: 0.99,
-    credits: 5,
+    credits: 10,
     currency: 'USD',
   },
   pro: {
     name: 'Pro Pack',
     amount: 4.99,
-    credits: 30,
+    credits: 60,
     currency: 'USD',
   },
 }
@@ -36,12 +34,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-/**
- * 获取 PayPal 访问令牌
- */
+function matchesRoute(pathname: string, route: string) {
+  return pathname === route || pathname.endsWith(route)
+}
+
+async function getAuthenticatedUser(req: Request) {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    throw new Error('Missing authorization header')
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim()
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+
+  if (error || !user) {
+    throw new Error('Invalid user token')
+  }
+
+  return user
+}
+
 async function getPayPalAccessToken() {
+  if (!PAYPAL_CONFIG.clientId || !PAYPAL_CONFIG.clientSecret) {
+    throw new Error('Missing PayPal credentials')
+  }
+
   const auth = btoa(`${PAYPAL_CONFIG.clientId}:${PAYPAL_CONFIG.clientSecret}`)
-  
   const response = await fetch(`${PAYPAL_CONFIG.baseUrl}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -52,16 +70,14 @@ async function getPayPalAccessToken() {
   })
 
   if (!response.ok) {
-    throw new Error('Failed to get PayPal access token')
+    const error = await response.text()
+    throw new Error(`Failed to get PayPal access token: ${error}`)
   }
 
   const data = await response.json()
-  return data.access_token
+  return data.access_token as string
 }
 
-/**
- * 创建 PayPal 订单
- */
 async function createPayPalOrder(plan: string, userId: string) {
   const pricingPlan = PRICING_PLANS[plan]
   if (!pricingPlan) {
@@ -69,12 +85,12 @@ async function createPayPalOrder(plan: string, userId: string) {
   }
 
   const accessToken = await getPayPalAccessToken()
-
   const response = await fetch(`${PAYPAL_CONFIG.baseUrl}/v2/checkout/orders`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
+      'PayPal-Request-Id': `${userId}:${plan}:${crypto.randomUUID()}`,
     },
     body: JSON.stringify({
       intent: 'CAPTURE',
@@ -85,10 +101,9 @@ async function createPayPalOrder(plan: string, userId: string) {
         },
         description: `${pricingPlan.name} - ${pricingPlan.credits} credits`,
       }],
-      metadata: {
-        userId,
-        plan,
-        credits: pricingPlan.credits.toString(),
+      application_context: {
+        shipping_preference: 'NO_SHIPPING',
+        user_action: 'PAY_NOW',
       },
     }),
   })
@@ -101,12 +116,8 @@ async function createPayPalOrder(plan: string, userId: string) {
   return await response.json()
 }
 
-/**
- * 捕获 PayPal 支付
- */
 async function capturePayPalOrder(orderId: string) {
   const accessToken = await getPayPalAccessToken()
-
   const response = await fetch(`${PAYPAL_CONFIG.baseUrl}/v2/checkout/orders/${orderId}/capture`, {
     method: 'POST',
     headers: {
@@ -123,49 +134,99 @@ async function capturePayPalOrder(orderId: string) {
   return await response.json()
 }
 
+async function completeOrder(orderId: string) {
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .select('id, user_id, credits_purchased, status, metadata')
+    .eq('payment_intent_id', orderId)
+    .maybeSingle()
+
+  if (orderError) {
+    throw new Error(`Failed to load order: ${orderError.message}`)
+  }
+
+  if (!order) {
+    throw new Error('Order record not found')
+  }
+
+  if (order.status === 'completed') {
+    return { alreadyCompleted: true, order }
+  }
+
+  const completedAt = new Date().toISOString()
+  const { error: updateError } = await supabase
+    .from('orders')
+    .update({
+      status: 'completed',
+      completed_at: completedAt,
+    })
+    .eq('id', order.id)
+
+  if (updateError) {
+    throw new Error(`Failed to update order: ${updateError.message}`)
+  }
+
+  const plan = order.metadata?.plan || 'paypal'
+  const { error: creditError } = await supabase.rpc('add_credits', {
+    user_id: order.user_id,
+    amount: order.credits_purchased,
+    transaction_type: 'purchase',
+    description: `Purchased ${plan} pack via PayPal`,
+    order_id: order.id,
+  })
+
+  if (creditError) {
+    throw new Error(`Failed to add credits: ${creditError.message}`)
+  }
+
+  return { alreadyCompleted: false, order }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const url = new URL(req.url)
-    const path = url.pathname
+    const { method } = req
+    const path = new URL(req.url).pathname
 
-    // 创建 PayPal 订单
-    if (req.method === 'POST' && path === '/create-order') {
-      const { plan, userId } = await req.json()
-
-      if (!plan || !userId) {
-        throw new Error('Missing plan or userId')
+    if (method === 'POST' && matchesRoute(path, '/create-order')) {
+      const user = await getAuthenticatedUser(req)
+      const { plan } = await req.json()
+      if (!plan) {
+        throw new Error('Missing plan')
       }
 
-      // 创建 PayPal 订单
-      const paypalOrder = await createPayPalOrder(plan, userId)
+      const pricingPlan = PRICING_PLANS[plan]
+      if (!pricingPlan) {
+        throw new Error('Invalid plan')
+      }
 
-      // 在数据库中创建订单记录
-      const { data: order, error: orderError } = await supabase
+      const paypalOrder = await createPayPalOrder(plan, user.id)
+      const { data: order, error: insertError } = await supabase
         .from('orders')
         .insert({
-          user_id: userId,
-          amount: PRICING_PLANS[plan].amount,
-          credits_purchased: PRICING_PLANS[plan].credits,
+          user_id: user.id,
+          amount: pricingPlan.amount,
+          currency: pricingPlan.currency,
+          credits_purchased: pricingPlan.credits,
           status: 'pending',
           payment_provider: 'paypal',
           payment_intent_id: paypalOrder.id,
           metadata: { plan },
         })
-        .select()
+        .select('id')
         .single()
 
-      if (orderError) {
-        console.error('Error creating order:', orderError)
+      if (insertError) {
+        throw new Error(`Failed to create order record: ${insertError.message}`)
       }
 
       return new Response(
         JSON.stringify({
           orderId: paypalOrder.id,
-          approvalUrl: paypalOrder.links?.find((link: any) => link.rel === 'approve')?.href,
+          appOrderId: order.id,
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -173,94 +234,44 @@ serve(async (req) => {
       )
     }
 
-    // 捕获支付（Webhook 或前端回调）
-    if (req.method === 'POST' && path === '/capture-order') {
-      const { orderId, userId } = await req.json()
-
+    if (method === 'POST' && matchesRoute(path, '/capture-order')) {
+      await getAuthenticatedUser(req)
+      const { orderId } = await req.json()
       if (!orderId) {
         throw new Error('Missing orderId')
       }
 
-      // 捕获 PayPal 支付
       const captureData = await capturePayPalOrder(orderId)
-
-      // 检查支付状态
-      if (captureData.status === 'COMPLETED') {
-        const purchaseUnit = captureData.purchase_units[0]
-        const metadata = purchaseUnit.custom_id || purchaseUnit.description
-        
-        // 从 PayPal 自定义数据中提取元数据
-        let userId = userId
-        let plan = 'basic'
-        let credits = 5
-
-        try {
-          const customData = JSON.parse(purchaseUnit.custom_id || '{}')
-          userId = customData.userId
-          plan = customData.plan
-          credits = parseInt(customData.credits)
-        } catch (e) {
-          console.error('Error parsing custom data:', e)
-        }
-
-        // 更新订单状态
-        const { error: updateError } = await supabase
-          .from('orders')
-          .update({
-            status: 'completed',
-            completed_at: new Date().toISOString(),
-          })
-          .eq('payment_intent_id', orderId)
-
-        if (updateError) {
-          console.error('Error updating order:', updateError)
-        }
-
-        // 添加积分到用户账户
-        const { error: creditError } = await supabase.rpc('add_credits', {
-          user_id: userId,
-          amount: credits,
-          transaction_type: 'purchase',
-          description: `Purchased ${plan} pack`,
-        })
-
-        if (creditError) {
-          console.error('Error adding credits:', creditError)
-        }
-
-        console.log(`Successfully added ${credits} credits to user ${userId}`)
+      if (captureData.status !== 'COMPLETED') {
+        throw new Error(`Unexpected PayPal capture status: ${captureData.status}`)
       }
 
+      const completion = await completeOrder(orderId)
       return new Response(
-        JSON.stringify({ success: true, data: captureData }),
+        JSON.stringify({
+          success: true,
+          alreadyCompleted: completion.alreadyCompleted,
+          data: captureData,
+        }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
 
-    // PayPal Webhook 处理
-    if (req.method === 'POST' && path === '/webhook') {
+    if (method === 'POST' && matchesRoute(path, '/webhook')) {
       const body = await req.json()
-      
-      // PayPal webhook 验证（可选，推荐生产环境使用）
-      const webhookId = Deno.env.get('PAYPAL_WEBHOOK_ID')
-      if (webhookId) {
-        // TODO: 验证 webhook 签名
-        // https://developer.paypal.com/docs/api-basics/notifications/webhooks/#verify-the-webhook-message
+
+      if (body.event_type === 'CHECKOUT.ORDER.APPROVED') {
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
       }
 
-      // 处理支付完成事件
       if (body.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
-        const resource = body.resource
-        const orderId = resource.supplementary_data?.related_ids?.order_id
-        
+        const orderId = body.resource?.supplementary_data?.related_ids?.order_id
         if (orderId) {
-          // 更新订单状态
-          await supabase
-            .from('orders')
-            .update({ status: 'completed' })
-            .eq('payment_intent_id', orderId)
+          console.log(`Received PayPal capture webhook for order ${orderId}`)
         }
       }
 
@@ -269,9 +280,9 @@ serve(async (req) => {
       })
     }
 
-    return new Response('Not found', { status: 404 })
+    return new Response('Not found', { status: 404, headers: corsHeaders })
   } catch (error) {
-    console.error('Error:', error)
+    console.error('PayPal function error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {

@@ -22,6 +22,8 @@
   }
 
   const supabaseClient = window.supabaseClient;
+  window.APP_SUPABASE_URL = AUTH_SUPABASE_URL;
+  window.APP_SUPABASE_ANON_KEY = AUTH_SUPABASE_ANON_KEY;
 
   async function getCurrentUser() {
     try {
@@ -176,7 +178,11 @@
       const data = await response.json();
       const creditsDisplay = document.getElementById('userCredits');
       if (creditsDisplay) {
-        creditsDisplay.textContent = `${data.credits} 积分`;
+        const freeSessions = data.freeSessionsRemaining || 0;
+        const credits = data.credits || 0;
+        creditsDisplay.textContent = freeSessions > 0
+          ? `免费 ${freeSessions} 次 · ${credits} 积分`
+          : `${credits} 积分`;
       }
     } catch (error) {
       console.error('Failed to load credits:', error);
@@ -190,6 +196,7 @@
   window.getCurrentUser = getCurrentUser;
   window.getCurrentSession = getCurrentSession;
   window.onAuthStateChange = onAuthStateChange;
+  window.refreshUserCredits = displayUserCredits;
 
   async function initAuthUI() {
     await restoreSessionFromUrl();

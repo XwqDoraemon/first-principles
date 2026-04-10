@@ -18,6 +18,14 @@ interface ChatRequest {
   userId: string
 }
 
+interface StartConversationResult {
+  allowed: boolean
+  charged_credits: number
+  remaining_credits: number
+  free_sessions_remaining: number
+  message: string
+}
+
 interface ChatResponse {
   success: boolean
   message?: string
@@ -162,8 +170,22 @@ serve(async (req) => {
       )
     }
 
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid user session',
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      )
+    }
+
     const requestData: ChatRequest = await req.json()
-    const { messages, conversationId, userId } = requestData
+    const { messages, conversationId } = requestData
 
     // Validate request
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -193,11 +215,53 @@ serve(async (req) => {
       )
     }
 
+    if (!conversationId) {
+      const { data: sessionStart, error: sessionError } = await supabaseClient.rpc('start_conversation_session', {
+        user_id: user.id,
+      })
+
+      if (sessionError) {
+        console.error('Failed to start conversation session:', sessionError)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to verify conversation quota',
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          }
+        )
+      }
+
+      const sessionResult = Array.isArray(sessionStart)
+        ? sessionStart[0] as StartConversationResult
+        : sessionStart as StartConversationResult
+
+      if (!sessionResult?.allowed) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Not enough credits to start a new session',
+            details: {
+              remainingCredits: sessionResult?.remaining_credits || 0,
+              freeSessionsRemaining: sessionResult?.free_sessions_remaining || 0,
+              conversationCost: 2,
+            },
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 402,
+          }
+        )
+      }
+    }
+
     // Call DeepSeek API
     const aiResponse = await callDeepSeekAPI({
       messages: messages,
       conversationId: conversationId,
-      userId: userId,
+      userId: user.id,
     })
 
     // Return SSE stream
@@ -416,7 +480,6 @@ async function callDeepSeekAPI(params: {
     }
   }
 }
-
 
 
 

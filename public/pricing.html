@@ -330,6 +330,73 @@
   .paypal-button-container {
     margin-top: 12px;
   }
+  .paypal-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 11, 0.9);
+    backdrop-filter: blur(12px);
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .paypal-modal.active {
+    display: flex;
+  }
+  .paypal-modal-card {
+    width: min(460px, 100%);
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 28px;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  }
+  .paypal-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(232,230,223,0.7);
+    cursor: pointer;
+  }
+  .paypal-modal-title {
+    font-family: 'Lora', serif;
+    font-size: 30px;
+    color: #F0EDE4;
+    margin-bottom: 10px;
+  }
+  .paypal-modal-subtitle {
+    font-size: 14px;
+    color: rgba(232,230,223,0.55);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .paypal-plan-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(184,169,138,0.12);
+    color: #E8E6DF;
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .paypal-status {
+    min-height: 22px;
+    font-size: 13px;
+    color: rgba(232,230,223,0.68);
+    margin: 14px 0 0;
+  }
+  .paypal-status[data-state="error"] {
+    color: #f1a4a4;
+  }
   .plan-btn.ghost {
     background: transparent;
     color: rgba(232,230,223,0.6);
@@ -417,7 +484,7 @@
     <div class="auth-logo">
       <span style="font-size: 48px;">🧠</span>
       <h2>First Principles</h2>
-      <p>登录以保存您的思考会话</p>
+      <p>登录后即可安全购买积分，并同步您的会话与历史记录</p>
     </div>
 
     <div class="auth-buttons">
@@ -436,7 +503,25 @@
       <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4);">
         首次登录将自动创建账户
       </p>
+      <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4); margin-top: 8px; line-height: 1.6;">
+        若 Google 页面显示 `supabase.co`，这是我们使用的官方安全认证服务，属于正常跳转。
+      </p>
     </div>
+  </div>
+</div>
+
+<div id="paypalCheckoutModal" class="paypal-modal">
+  <div class="paypal-modal-card">
+    <button class="paypal-modal-close" onclick="closePayPalModal()">&times;</button>
+    <div class="pricing-eyebrow">Secure Checkout</div>
+    <h2 class="paypal-modal-title">Finish with PayPal</h2>
+    <p class="paypal-modal-subtitle">Pay securely with your PayPal balance, linked bank account, or card inside the PayPal checkout window.</p>
+    <div class="paypal-plan-pill">
+      <span id="paypalPlanName">Basic Pack</span>
+      <span id="paypalPlanMeta">$0.99 • 10 credits</span>
+    </div>
+    <div id="paypalButtonContainer" class="paypal-button-container"></div>
+    <p id="paypalStatus" class="paypal-status">Choose PayPal below to complete your purchase.</p>
   </div>
 </div>
 
@@ -450,12 +535,16 @@ function openAuthModal() {
 function closeAuthModal() {
   document.getElementById('authModal').classList.remove('active');
 }
-window.onclick = function(event) {
+window.addEventListener('click', function(event) {
   const modal = document.getElementById('authModal');
+  const paypalModal = document.getElementById('paypalCheckoutModal');
   if (event.target === modal) {
     closeAuthModal();
   }
-}
+  if (event.target === paypalModal) {
+    closePayPalModal();
+  }
+})
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
 </script>
@@ -464,7 +553,7 @@ window.closeAuthModal = closeAuthModal;
   <div class="pricing-header">
     <div class="pricing-eyebrow">Simple, Transparent Pricing</div>
     <h1 class="pricing-h1">Pay for what you use</h1>
-    <p class="pricing-sub">Start with 2 free sessions. Buy credits when you need them. No subscriptions.</p>
+    <p class="pricing-sub">Start with 2 free sessions. After that, each new session costs 2 credits. Buy credits whenever you need them.</p>
   </div>
 
   <div class="pricing-cards">
@@ -486,8 +575,10 @@ window.closeAuthModal = closeAuthModal;
     <div class="pricing-card featured">
       <div class="plan-name">Basic Pack</div>
       <div class="plan-price">$0.99<span></span></div>
-      <div class="plan-desc">~5 thinking sessions</div>
+      <div class="plan-desc">5 complete thinking sessions</div>
       <ul class="plan-features">
+        <li>10 credits included</li>
+        <li>2 credits per new session</li>
         <li>5 thinking sessions</li>
         <li>Full access to all 5 phases</li>
         <li>Shareable mind maps</li>
@@ -501,8 +592,10 @@ window.closeAuthModal = closeAuthModal;
     <div class="pricing-card">
       <div class="plan-name">Pro Pack</div>
       <div class="plan-price">$4.99<span></span></div>
-      <div class="plan-desc">~30 thinking sessions</div>
+      <div class="plan-desc">30 complete thinking sessions</div>
       <ul class="plan-features">
+        <li>60 credits included</li>
+        <li>2 credits per new session</li>
         <li>30 thinking sessions</li>
         <li>Full access to all 5 phases</li>
         <li>Shareable mind maps</li>
@@ -519,7 +612,7 @@ window.closeAuthModal = closeAuthModal;
     
     <div class="faq-item">
       <div class="faq-question">What counts as a "session"?</div>
-      <div class="faq-answer">One session = one complete thinking exercise from start to finish. You can go through all 5 phases (Understand → Deconstruct → Rebuild → Act → Complete) in a single session.</div>
+      <div class="faq-answer">One session = one complete thinking exercise from start to finish. A new session costs 2 credits, and you can go through all 5 phases in that single session.</div>
     </div>
 
     <div class="faq-item">
@@ -534,7 +627,7 @@ window.closeAuthModal = closeAuthModal;
 
     <div class="faq-item">
       <div class="faq-question">What payment methods do you accept?</div>
-      <div class="faq-answer">We accept all major credit cards and PayPal. Payment is processed securely through Stripe.</div>
+      <div class="faq-answer">We currently support PayPal checkout, including PayPal balance, linked bank accounts, and cards supported by PayPal.</div>
     </div>
 
     <div class="faq-item">

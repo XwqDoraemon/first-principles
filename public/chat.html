@@ -127,6 +127,40 @@
   .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
   .send-btn svg { width: 13px; height: 13px; fill: #0A0A0B; }
   .input-hint { font-size: 11px; color: rgba(232,230,223,0.18); margin-top: 8px; text-align: center; }
+  .billing-notice {
+    display: none;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(184,169,138,0.08);
+    border: 0.5px solid rgba(184,169,138,0.18);
+    color: rgba(232,230,223,0.75);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .billing-notice.active {
+    display: block;
+  }
+  .billing-notice[data-tone="error"] {
+    background: rgba(226,75,74,0.08);
+    border-color: rgba(226,75,74,0.2);
+    color: rgba(255,214,214,0.9);
+  }
+  .billing-notice-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .billing-link-btn {
+    background: rgba(184,169,138,0.16);
+    border: 0.5px solid rgba(184,169,138,0.28);
+    color: #E8E6DF;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+  }
 
   .sidebar-right { border-left: 0.5px solid rgba(255,255,255,0.07); padding: 24px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
   .sidebar-right::-webkit-scrollbar { width: 3px; }
@@ -207,6 +241,10 @@
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
+      <div class="billing-notice" id="billingNotice">
+        <div id="billingNoticeText"></div>
+        <div class="billing-notice-actions" id="billingNoticeActions"></div>
+      </div>
       <div class="input-hint">Powered by DeepSeek AI via Supabase Edge Functions</div>
     </div>
   </main>
@@ -286,6 +324,9 @@ const chatMessages = document.getElementById('chatMessages');
 const newChatBtn = document.getElementById('newChatBtn');
 const stepper = document.getElementById('stepper');
 const phaseText = document.getElementById('phaseText');
+const billingNotice = document.getElementById('billingNotice');
+const billingNoticeText = document.getElementById('billingNoticeText');
+const billingNoticeActions = document.getElementById('billingNoticeActions');
 
 // ==================== Stepper 管理 ====================
 
@@ -339,6 +380,131 @@ function detectPhaseFromText(text) {
  * @param {number} phase - 当前阶段 (1-4)
  */
 
+function renderBillingNotice(message, options = {}) {
+  if (!billingNotice || !billingNoticeText || !billingNoticeActions) return;
+
+  billingNoticeText.textContent = message;
+  billingNotice.dataset.tone = options.tone || 'default';
+  billingNoticeActions.innerHTML = '';
+
+  if (options.showPricingLink) {
+    const link = document.createElement('a');
+    link.href = '/pricing.html';
+    link.className = 'billing-link-btn';
+    link.textContent = '去充值';
+    billingNoticeActions.appendChild(link);
+  }
+
+  if (options.showLoginButton) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'billing-link-btn';
+    button.textContent = '立即登录';
+    button.onclick = () => window.openAuthModal?.();
+    billingNoticeActions.appendChild(button);
+  }
+
+  billingNotice.classList.add('active');
+}
+
+function clearBillingNotice() {
+  if (!billingNotice || !billingNoticeText || !billingNoticeActions) return;
+  billingNotice.classList.remove('active');
+  billingNotice.dataset.tone = 'default';
+  billingNoticeText.textContent = '';
+  billingNoticeActions.innerHTML = '';
+}
+
+async function getCurrentSessionSafe() {
+  if (window.getCurrentSession) {
+    return await window.getCurrentSession();
+  }
+
+  if (window.supabaseClient?.auth) {
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    return session || null;
+  }
+
+  return null;
+}
+
+async function getConversationAccessState() {
+  const session = await getCurrentSessionSafe();
+  if (!session?.user) {
+    return { session: null, credits: null };
+  }
+
+  const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/payment/credits`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch credit status');
+  }
+
+  const credits = await response.json();
+  return { session, credits };
+}
+
+function openRechargeModal(message) {
+  const modal = document.getElementById('rechargeModal');
+  const text = document.getElementById('rechargeModalText');
+  if (text && message) {
+    text.textContent = message;
+  }
+  modal?.classList.add('active');
+}
+
+function closeRechargeModal() {
+  document.getElementById('rechargeModal')?.classList.remove('active');
+}
+
+async function ensureReadyToSend() {
+  const isNewConversation = !currentConversationId;
+  const { session, credits } = await getConversationAccessState();
+
+  if (!session?.user) {
+    renderBillingNotice('登录后才能开始新的思考会话。登录成功后你会自动获得 2 次免费机会；Google 页面里若出现 `supabase.co`，属于官方安全认证跳转。', {
+      tone: 'error',
+      showLoginButton: true,
+    });
+    window.openAuthModal?.();
+    return { allowed: false, reason: 'auth' };
+  }
+
+  if (!isNewConversation) {
+    clearBillingNotice();
+    return { allowed: true, session, credits };
+  }
+
+  const freeSessions = credits?.freeSessionsRemaining || 0;
+  const creditBalance = credits?.credits || 0;
+  const canStartConversation = Boolean(credits?.canStartConversation);
+
+  if (!canStartConversation) {
+    const message = `你的免费次数已经用完，当前只有 ${creditBalance} 积分；开启新的思考会话需要 2 积分。`;
+    renderBillingNotice(`${message} 现在充值后即可继续。`, {
+      tone: 'error',
+      showPricingLink: true,
+    });
+    openRechargeModal(message);
+    return { allowed: false, reason: 'credits', session, credits };
+  }
+
+  if (freeSessions > 0) {
+    renderBillingNotice(`本次将消耗 1 次免费机会。你还剩 ${freeSessions} 次免费会话。`);
+  } else {
+    renderBillingNotice(`本次将消耗 2 积分。你当前还有 ${creditBalance} 积分。`, {
+      showPricingLink: creditBalance <= 2,
+    });
+  }
+
+  return { allowed: true, session, credits };
+}
+
 // ==================== API 调用 ====================
 async function callSupabaseChat(messages, userId = 'local-user') {
   let authToken = CHAT_SUPABASE_ANON_KEY;
@@ -364,12 +530,17 @@ async function callSupabaseChat(messages, userId = 'local-user') {
     },
     body: JSON.stringify({
       messages: messages,
+      conversationId: currentConversationId,
       userId: resolvedUserId
     })
   });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    const error = new Error(errorData.error || `API error: ${response.status}`);
+    error.status = response.status;
+    error.details = errorData.details || null;
+    throw error;
   }
 
   // 处理 SSE 流式响应
@@ -650,6 +821,19 @@ async function sendMessage() {
 
   if (!content) return;
 
+  try {
+    const access = await ensureReadyToSend();
+    if (!access.allowed) {
+      return;
+    }
+  } catch (error) {
+    console.error('Failed to validate access before sending:', error);
+    renderBillingNotice('暂时无法校验你的登录状态或积分，请稍后重试。', {
+      tone: 'error',
+    });
+    return;
+  }
+
   userInput.value = '';
   userInput.style.height = 'auto';
 
@@ -710,6 +894,28 @@ async function sendMessage() {
   } catch (error) {
     hideTyping();
     console.error('Failed to send message:', error);
+    if (error.status === 401) {
+      addMessageToUI('assistant', '请先登录，再开始新的思考会话。');
+      window.openAuthModal?.();
+      return;
+    }
+
+    if (error.status === 402) {
+      const remainingCredits = error.details?.remainingCredits ?? 0;
+      const freeSessionsRemaining = error.details?.freeSessionsRemaining ?? 0;
+      addMessageToUI(
+        'assistant',
+        `当前无法开启新的思考会话。你剩余 ${freeSessionsRemaining} 次免费机会、${remainingCredits} 积分，而新会话需要 2 积分。请先充值后再开始新一轮聊天。`
+      );
+      renderBillingNotice('积分不足，当前无法开始新会话。充值后即可继续。', {
+        tone: 'error',
+        showPricingLink: true,
+      });
+      openRechargeModal(`你还剩 ${freeSessionsRemaining} 次免费机会、${remainingCredits} 积分；开启新会话需要 2 积分。`);
+      await window.refreshUserCredits?.();
+      return;
+    }
+
     addMessageToUI('assistant', '抱歉，连接到 Supabase 失败。请检查网络连接。');
   } finally {
     sendBtn.disabled = false;
@@ -722,6 +928,8 @@ function createNewConversation() {
   messages = [];
   currentPhase = 1; // 重置阶段
   updateStepper(1); // 重置 UI
+  clearBillingNotice();
+  closeRechargeModal();
   
   // 更新标题
   const sessionTitle = document.getElementById('sessionTitle');
@@ -759,6 +967,7 @@ newChatBtn.addEventListener('click', createNewConversation);
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', async () => {
   await checkSupabaseHealth();
+  clearBillingNotice();
   userInput.focus();
   console.log('🚀 First Principles v3.0.0 - Supabase Serverless');
   console.log('📍 Stepper 实时更新已启用');
@@ -776,14 +985,19 @@ function closeAuthModal() {
 // 点击外部关闭
 window.onclick = function(event) {
   const modal = document.getElementById('authModal');
+  const rechargeModal = document.getElementById('rechargeModal');
   if (event.target === modal) {
     closeAuthModal();
+  }
+  if (event.target === rechargeModal) {
+    closeRechargeModal();
   }
 }
 
 // 确保函数在全局作用域中可用
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
+window.closeRechargeModal = closeRechargeModal;
 </script>
 
 <!-- 认证模态框 -->
@@ -794,7 +1008,7 @@ window.closeAuthModal = closeAuthModal;
     <div class="auth-logo">
       <span style="font-size: 48px;">🧠</span>
       <h2>First Principles</h2>
-      <p>登录以保存您的思考会话</p>
+      <p>登录后才能开始新的思考会话，并安全同步免费次数、积分与历史记录</p>
     </div>
 
     <div class="auth-buttons">
@@ -812,6 +1026,32 @@ window.closeAuthModal = closeAuthModal;
     <div style="text-align: center; margin-top: 24px;">
       <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4);">
         首次登录将自动创建账户
+      </p>
+      <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4); margin-top: 8px; line-height: 1.6;">
+        如果 Google 提示继续前往 `supabase.co`，这是 First Principles 使用的官方认证托管服务，属于正常安全跳转。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div id="rechargeModal" class="auth-modal">
+  <div class="auth-modal-content">
+    <button class="auth-modal-close" onclick="closeRechargeModal()">&times;</button>
+
+    <div class="auth-logo">
+      <span style="font-size: 44px;">💳</span>
+      <h2>Credits needed</h2>
+      <p id="rechargeModalText">You need credits to start a new thinking session.</p>
+    </div>
+
+    <div class="auth-buttons">
+      <a href="/pricing.html" class="auth-btn-full google-btn" style="text-decoration:none;">前往充值</a>
+      <button class="auth-btn-full" onclick="closeRechargeModal()" style="background:rgba(255,255,255,0.06);color:#E8E6DF;">稍后再说</button>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4);">
+        每次开启新的思考会话需要 2 积分
       </p>
     </div>
   </div>

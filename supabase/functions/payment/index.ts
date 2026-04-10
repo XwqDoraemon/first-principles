@@ -182,7 +182,7 @@ serve(async (req) => {
 
       const { data: userData } = await supabase
         .from('users')
-        .select('credits_balance, total_sessions')
+        .select('credits_balance, total_sessions, free_sessions_remaining')
         .eq('id', user.id)
         .single()
 
@@ -190,6 +190,9 @@ serve(async (req) => {
         JSON.stringify({
           credits: userData?.credits_balance || 0,
           totalSessions: userData?.total_sessions || 0,
+          freeSessionsRemaining: userData?.free_sessions_remaining || 0,
+          canStartConversation: (userData?.free_sessions_remaining || 0) > 0 || (userData?.credits_balance || 0) >= 2,
+          conversationCost: 2,
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

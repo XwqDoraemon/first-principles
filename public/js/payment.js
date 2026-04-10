@@ -8,12 +8,12 @@ const STRIPE_CONFIG = {
     basic: {
       name: 'Basic Pack',
       amount: 0.99,
-      credits: 5,
+      credits: 10,
     },
     pro: {
       name: 'Pro Pack',
       amount: 4.99,
-      credits: 30,
+      credits: 60,
     },
   },
 }

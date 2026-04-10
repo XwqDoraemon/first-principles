@@ -1,188 +1,204 @@
-// PayPal 支付集成配置
+// PayPal payment integration
 const PAYPAL_CONFIG = {
-  // PayPal Client ID (沙盒环境)
-  clientId: 'AU_ZropTaP02Cbe_FaE1mz2h0TGiNh2G0RadG69OFbpDRDrA4wc19xhY30w61q_egWrWSEDQ6TIOE-dD',
-  
-  // PayPal SDK URL
-  sdkUrl: 'https://www.paypal.com/sdk/js?client-id=AU_ZropTaP02Cbe_FaE1mz2h0TGiNh2G0RadG69OFbpDRDrA4wc19xhY30w61q_egWrWSEDQ6TIOE-dD&currency=USD',
-  
-  // 价格配置
+  clientId: window.PAYPAL_CLIENT_ID || 'AU_ZropTaP02Cbe_FaE1mz2h0TGiNh2G0RadG69OFbpDRDrA4wc19xhY30w61q_egWrWSEDQ6TIOE-dD',
+  currency: 'USD',
   plans: {
     basic: {
       name: 'Basic Pack',
       amount: 0.99,
-      credits: 5,
+      credits: 10,
     },
     pro: {
       name: 'Pro Pack',
       amount: 4.99,
-      credits: 30,
+      credits: 60,
     },
   },
 }
 
-// ==================== PayPal 支付相关函数 ====================
+const DEFAULT_SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co'
+const PAYPAL_FUNCTION_URL = `${window.APP_SUPABASE_URL || DEFAULT_SUPABASE_URL}/functions/v1/payment-paypal`
 
-/**
- * 初始化 PayPal SDK
- */
-let paypalLoaded = false
+let paypalSdkPromise = null
+function getPayPalModalElements() {
+  return {
+    modal: document.getElementById('paypalCheckoutModal'),
+    planName: document.getElementById('paypalPlanName'),
+    planMeta: document.getElementById('paypalPlanMeta'),
+    status: document.getElementById('paypalStatus'),
+    container: document.getElementById('paypalButtonContainer'),
+  }
+}
+
+function setPayPalStatus(message, isError = false) {
+  const { status } = getPayPalModalElements()
+  if (!status) return
+
+  status.textContent = message
+  status.dataset.state = isError ? 'error' : 'default'
+}
+
+function openPayPalModal(plan) {
+  const pricingPlan = PAYPAL_CONFIG.plans[plan]
+  const { modal, planName, planMeta, container } = getPayPalModalElements()
+  if (!modal || !pricingPlan) return
+
+  planName.textContent = pricingPlan.name
+  planMeta.textContent = `$${pricingPlan.amount.toFixed(2)} • ${pricingPlan.credits} credits`
+  container.innerHTML = ''
+  setPayPalStatus('Choose PayPal below to complete your purchase.')
+  modal.classList.add('active')
+}
+
+function closePayPalModal() {
+  const { modal, container } = getPayPalModalElements()
+  if (!modal) return
+
+  modal.classList.remove('active')
+  container.innerHTML = ''
+}
+
+async function requireAuthenticatedSession() {
+  const session = window.getCurrentSession
+    ? await window.getCurrentSession()
+    : (await window.supabaseClient?.auth.getSession())?.data?.session
+
+  if (!session?.user) {
+    window.openAuthModal?.()
+    throw new Error('Please sign in first to purchase credits.')
+  }
+
+  return session
+}
+
 function loadPayPalSDK() {
-  return new Promise((resolve, reject) => {
-    if (paypalLoaded) {
-      resolve()
-      return
-    }
+  if (window.paypal) {
+    return Promise.resolve(window.paypal)
+  }
 
+  if (paypalSdkPromise) {
+    return paypalSdkPromise
+  }
+
+  paypalSdkPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = PAYPAL_CONFIG.sdkUrl
-    script.onload = () => {
-      paypalLoaded = true
-      resolve()
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CONFIG.clientId)}&currency=${PAYPAL_CONFIG.currency}&intent=capture&components=buttons`
+    script.onload = () => resolve(window.paypal)
+    script.onerror = () => {
+      paypalSdkPromise = null
+      reject(new Error('Failed to load PayPal SDK'))
     }
-    script.onerror = () => reject(new Error('Failed to load PayPal SDK'))
     document.head.appendChild(script)
   })
+
+  return paypalSdkPromise
 }
 
-/**
- * 创建 PayPal 订单
- * @param {string} plan - 计划类型 ('basic' | 'pro')
- * @param {string} userId - 用户 ID
- * @returns {Promise<{orderId: string, approvalUrl: string}>}
- */
-async function createPayPalOrder(plan, userId) {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/payment-paypal/create-order`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ plan, userId }),
-    })
+async function createPayPalOrder(plan, accessToken) {
+  const response = await fetch(`${PAYPAL_FUNCTION_URL}/create-order`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ plan }),
+  })
 
-    if (!response.ok) {
-      throw new Error('Failed to create PayPal order')
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error('Error creating PayPal order:', error)
-    throw error
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to create PayPal order')
   }
+
+  return data
 }
 
-/**
- * 捕获 PayPal 支付
- * @param {string} orderId - PayPal 订单 ID
- * @returns {Promise<Object>}
- */
-async function capturePayPalOrder(orderId) {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/payment-paypal/capture-order`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ orderId }),
-    })
+async function capturePayPalOrder(orderId, accessToken) {
+  const response = await fetch(`${PAYPAL_FUNCTION_URL}/capture-order`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ orderId }),
+  })
 
-    if (!response.ok) {
-      throw new Error('Failed to capture PayPal order')
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error('Error capturing PayPal order:', error)
-    throw error
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to capture PayPal order')
   }
+
+  return data
 }
 
-/**
- * 使用 PayPal 按钮支付
- * @param {string} plan - 计划类型
- */
+async function renderPayPalButtons(plan, accessToken) {
+  const { container } = getPayPalModalElements()
+  if (!container) {
+    throw new Error('Missing PayPal container')
+  }
+
+  container.innerHTML = ''
+  const buttons = window.paypal.Buttons({
+    style: {
+      layout: 'vertical',
+      shape: 'rect',
+      label: 'paypal',
+      tagline: false,
+    },
+    createOrder: async () => {
+      setPayPalStatus('Creating your order...')
+      const result = await createPayPalOrder(plan, accessToken)
+      setPayPalStatus('Order created. Continue in the PayPal popup.')
+      return result.orderId
+    },
+    onApprove: async (data) => {
+      setPayPalStatus('Payment approved. Confirming your credits...')
+      const result = await capturePayPalOrder(data.orderID, accessToken)
+
+      if (result.success) {
+        closePayPalModal()
+        await window.refreshUserCredits?.()
+        window.location.href = '/pricing.html?paypal=success'
+      }
+    },
+    onCancel: () => {
+      setPayPalStatus('Payment was cancelled. You can try again.')
+    },
+    onError: (error) => {
+      console.error('PayPal checkout error:', error)
+      setPayPalStatus('PayPal checkout failed. Please try again.', true)
+    },
+  })
+
+  await buttons.render(container)
+}
+
 async function handlePayPalPayment(plan) {
-  // 检查用户是否已登录
-  const { data: { user } } = await window.supabaseClient.auth.getUser()
-  
-  if (!user) {
-    alert('请先登录以购买积分')
-    window.location.href = '/chat.html#signin'
-    return
-  }
-
   try {
-    // 显示加载状态
-    const btn = event.target
-    const originalText = btn.textContent
-    btn.textContent = '处理中...'
-    btn.disabled = true
-
-    // 加载 PayPal SDK
+    const session = await requireAuthenticatedSession()
     await loadPayPalSDK()
-
-    // 创建 PayPal 订单
-    const { orderId } = await createPayPalOrder(plan, user.id)
-
-    // 使用 PayPal JS SDK 渲染按钮并跳转
-    if (window.paypal) {
-      window.paypal.Buttons({
-        createOrder: () => orderId,
-        onApprove: async (data) => {
-          // 用户授权后，捕获支付
-          const captureResult = await capturePayPalOrder(data.orderID)
-          
-          if (captureResult.success) {
-            alert('🎉 支付成功！积分已添加到您的账户')
-            window.location.href = '/pricing.html?success=true'
-          }
-        },
-        onError: (err) => {
-          console.error('PayPal error:', err)
-          alert('支付失败，请重试')
-          btn.textContent = originalText
-          btn.disabled = false
-        },
-        onCancel: () => {
-          alert('支付已取消')
-          btn.textContent = originalText
-          btn.disabled = false
-        },
-      }).render('body').then(() => {
-        // 自动点击 PayPal 按钮
-        setTimeout(() => {
-          document.querySelector('.paypal-buttons')?.click()
-        }, 500)
-      })
-    }
+    openPayPalModal(plan)
+    await renderPayPalButtons(plan, session.access_token)
   } catch (error) {
-    console.error('Error:', error)
-    alert('创建订单失败，请重试')
-    
-    // 恢复按钮状态
-    const btn = event.target
-    btn.textContent = originalText
-    btn.disabled = false
+    console.error('Error starting PayPal payment:', error)
+    if (error.message) {
+      alert(error.message)
+    }
   }
 }
 
-/**
- * 检查支付结果
- */
 function checkPayPalPaymentResult() {
   const urlParams = new URLSearchParams(window.location.search)
-  const success = urlParams.get('success')
-  const token = urlParams.get('token') // PayPal 返回的订单 ID
+  const success = urlParams.get('paypal')
 
-  if (success === 'true' && token) {
-    // 支付成功，显示确认消息
-    setTimeout(() => {
-      alert('🎉 支付成功！您的积分已添加到账户')
-      // 清除 URL 参数
+  if (success === 'success') {
+    setTimeout(async () => {
+      await window.refreshUserCredits?.()
+      alert('Payment successful. Your credits have been added to your account.')
       window.history.replaceState({}, '', '/pricing.html')
-    }, 500)
+    }, 300)
   }
 }
+
+window.handlePayPalPayment = handlePayPalPayment
+window.closePayPalModal = closePayPalModal
+window.checkPayPalPaymentResult = checkPayPalPaymentResult

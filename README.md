@@ -168,8 +168,8 @@ See [CLOUDFLARE_PAGES_DEPLOYMENT.md](CLOUDFLARE_PAGES_DEPLOYMENT.md) for details
 | Plan | Price | Credits | Cost per Session |
 |------|-------|---------|------------------|
 | Free | $0 | 2 | $0 |
-| Basic Pack | $0.99 | 5 | ~$0.20 |
-| Pro Pack | $4.99 | 30 | ~$0.17 |
+| Basic Pack | $0.99 | 10 | ~$0.20 |
+| Pro Pack | $4.99 | 60 | ~$0.17 |
 
 **New users get 2 free sessions!**
 
