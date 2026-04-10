@@ -438,6 +438,7 @@ async function getConversationAccessState() {
     const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/payment/credits`, {
       method: 'GET',
       headers: {
+        'apikey': CHAT_SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${session.access_token}`,
       },
     });
@@ -535,6 +536,7 @@ async function callSupabaseChat(messages, userId = 'local-user') {
   const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/chat`, {
     method: 'POST',
     headers: {
+      'apikey': CHAT_SUPABASE_ANON_KEY,
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${authToken}`
     },
@@ -747,6 +749,7 @@ async function checkSupabaseHealth() {
     const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/health`, {
       method: 'GET',
       headers: {
+        'apikey': CHAT_SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${CHAT_SUPABASE_ANON_KEY}`
       }
     });

@@ -170,6 +170,7 @@
       const response = await fetch(`${AUTH_SUPABASE_URL}/functions/v1/payment/credits`, {
         method: 'GET',
         headers: {
+          'apikey': AUTH_SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${session.access_token}`,
         },
       });

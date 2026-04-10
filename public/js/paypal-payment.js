@@ -99,6 +99,7 @@ async function createPayPalOrder(plan, accessToken) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'apikey': window.APP_SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ plan }),
@@ -117,6 +118,7 @@ async function capturePayPalOrder(orderId, accessToken) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'apikey': window.APP_SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ orderId }),

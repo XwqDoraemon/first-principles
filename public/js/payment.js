@@ -32,6 +32,7 @@ async function createPaymentIntent(plan, userId) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({ plan, userId }),
@@ -58,6 +59,7 @@ async function getUserCredits(token) {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/payment/credits`, {
       method: 'GET',
       headers: {
+        'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${token}`,
       },
     })
