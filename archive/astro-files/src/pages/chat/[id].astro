@@ -1,19 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Session — First Principles</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: #0A0A0B; color: #E8E6DF; min-height: 100vh; overflow: hidden; }
+---
+import Layout from '../../layouts/Layout.astro';
 
-  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 0.5px solid rgba(255,255,255,0.08); background: rgba(10,10,11,0.95); backdrop-filter: blur(12px); z-index: 100; height: 56px; }
-  .logo { font-family: 'Lora', serif; font-size: 18px; color: #F0EDE4; text-decoration: none; }
-  .logo span { color: #B8A98A; font-style: italic; }
+export async function getStaticPaths() {
+  return [
+    { params: { id: 'new' } },
+    { params: { id: 'sample' } }
+  ];
+}
 
+const { id } = Astro.params;
+const conversationId = id || 'new';
+---
+
+<Layout title={`Session — First Principles`}>
+  <nav>
+    <a href="/" class="logo">First <span>Principles</span></a>
+    <div style="display:flex;gap:24px;align-items:center;">
+      <a href="/history" style="text-decoration:none;color:rgba(232,230,223,0.5);font-size:13px;">History</a>
+      <a href="/about" style="text-decoration:none;color:rgba(232,230,223,0.5);font-size:13px;">About</a>
+    </div>
+  </nav>
+
+  <div class="chat-page">
+    <!-- Left Sidebar -->
+    <div class="sidebar-left" id="sidebar-left">
+      <div class="sidebar-section-label">Past sessions</div>
+      <div id="history-list">
+        <div style="color:rgba(232,230,223,0.2);font-size:12px;padding:8px 4px;">No sessions yet</div>
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:0.5px solid rgba(255,255,255,0.06);">
+        <button class="new-chat-btn" id="new-session-btn">+ New session</button>
+      </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="chat-main">
+      <div class="chat-top-bar">
+        <div class="session-info">
+          <div class="session-title" id="session-title">New session</div>
+          <div class="session-sub" id="session-sub">Start by typing your problem below</div>
+        </div>
+        <div class="phase-pill" id="phase-pill" style="display:none;">
+          <div class="phase-dot"></div>
+          <div class="phase-text" id="phase-text">Phase 1</div>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="empty-state" id="empty-state">
+          <div style="font-size:48px;margin-bottom:16px;opacity:0.6">🧠</div>
+          <h2>Think from first principles.</h2>
+          <p>Type your problem, dilemma, or question below.<br>A thinking coach will guide you — one question at a time.</p>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="input-wrapper">
+          <textarea class="chat-textarea" id="user-input" rows="1" placeholder="Share your thoughts…" autofocus></textarea>
+          <button class="send-btn" id="send-btn" type="button">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+        <div class="input-hint">Enter to send · <a id="skip-advice-link">Skip to advice</a></div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="sidebar-right" id="sidebar-right">
+      <div>
+        <div class="panel-label">Session progress</div>
+        <div class="stepper" id="stepper"></div>
+      </div>
+      <div id="assumptions-panel" style="display:none;">
+        <div class="panel-label">Assumptions broken</div>
+        <div id="assumptions-list"></div>
+      </div>
+      <div id="insight-panel" style="display:none;">
+        <div class="panel-label">Key insight</div>
+        <div class="insight-card">
+          <div class="insight-quote" id="insight-quote"></div>
+          <div class="insight-attr">· Waiting to emerge</div>
+        </div>
+      </div>
+      <button class="preview-btn" id="mindmap-btn">Preview mind map →</button>
+    </div>
+  </div>
+</Layout>
+
+<style is:global>
   .chat-page { display: grid; grid-template-columns: 260px 1fr 280px; height: calc(100vh - 56px); }
 
   .sidebar-left { border-right: 0.5px solid rgba(255,255,255,0.07); padding: 24px 18px; overflow-y: auto; }
@@ -110,80 +184,13 @@
     .sidebar-left, .sidebar-right { display: none; }
   }
 </style>
-</head>
-<body>
-<nav>
-  <a href="/" class="logo">First <span>Principles</span></a>
-  <div style="display:flex;gap:24px;align-items:center;">
-    <a href="/history" style="text-decoration:none;color:rgba(232,230,223,0.5);font-size:13px;">History</a>
-    <a href="/about" style="text-decoration:none;color:rgba(232,230,223,0.5);font-size:13px;">About</a>
-  </div>
-</nav>
-<div class="chat-page">
-  <div class="sidebar-left" id="sidebar-left">
-    <div class="sidebar-section-label">Past sessions</div>
-    <div id="history-list"><div style="color:rgba(232,230,223,0.2);font-size:12px;padding:8px 4px;">No sessions yet</div></div>
-    <div style="margin-top:16px;padding-top:14px;border-top:0.5px solid rgba(255,255,255,0.06);">
-      <button class="new-chat-btn" id="new-session-btn">+ New session</button>
-    </div>
-  </div>
-  
-  <div class="chat-main">
-    <div class="chat-top-bar">
-      <div class="session-info">
-        <div class="session-title" id="session-title">New session</div>
-        <div class="session-sub" id="session-sub">Start by typing your problem below</div>
-      </div>
-      <div class="phase-pill" id="phase-pill" style="display:none;">
-        <div class="phase-dot"></div>
-        <div class="phase-text" id="phase-text">Phase 1</div>
-      </div>
-    </div>
-    
-    <div class="chat-messages" id="chat-messages">
-      <div class="empty-state" id="empty-state">
-        <div style="font-size:48px;margin-bottom:16px;opacity:0.6">🧠</div>
-        <h2>Think from first principles.</h2>
-        <p>Type your problem, dilemma, or question below.<br>A thinking coach will guide you — one question at a time.</p>
-      </div>
-    </div>
-    
-    <div class="chat-input-area">
-      <div class="input-wrapper">
-        <textarea class="chat-textarea" id="user-input" rows="1" placeholder="Share your thoughts…" autofocus></textarea>
-        <button class="send-btn" id="send-btn" type="button">
-          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
-      </div>
-      <div class="input-hint">Enter to send · <a id="skip-advice-link">Skip to advice</a></div>
-    </div>
-  </div>
-  
-  <div class="sidebar-right" id="sidebar-right">
-    <div>
-      <div class="panel-label">Session progress</div>
-      <div class="stepper" id="stepper"></div>
-    </div>
-    <div id="assumptions-panel" style="display:none;">
-      <div class="panel-label">Assumptions broken</div>
-      <div id="assumptions-list"></div>
-    </div>
-    <div id="insight-panel" style="display:none;">
-      <div class="panel-label">Key insight</div>
-      <div class="insight-card">
-        <div class="insight-quote" id="insight-quote"></div>
-        <div class="insight-attr">· Waiting to emerge</div>
-      </div>
-    </div>
-    <button class="preview-btn" id="mindmap-btn">Preview mind map →</button>
-  </div>
-</div>
 
 <script>
-// ============================================
-// WORKING JAVASCRIPT - NO SYNTAX ERRORS
-// ============================================
-console.log('=== First Principles Chat - Working Version ===');
+console.log('=== First Principles Chat - Astro Version ===');
+
+// Supabase 配置
+const SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtc3RrbGZibnlldnV5eGlkbWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxOTIyMTcsImV4cCI6MjA5MDc2ODIxN30.KAsx2qB17eXS0loubA15WrsanSPnX1uT9IEWBLdliRw';
 
 // Get elements
 const chatEl = document.getElementById('chat-messages');
@@ -192,13 +199,6 @@ const sendBtn = document.getElementById('send-btn');
 const emptyState = document.getElementById('empty-state');
 const phasePill = document.getElementById('phase-pill');
 const phaseText = document.getElementById('phase-text');
-
-console.log('Elements loaded:', {
-  chatEl: !!chatEl,
-  userInput: !!userInput,
-  sendBtn: !!sendBtn,
-  emptyState: !!emptyState
-});
 
 // State
 let isStreaming = false;
@@ -252,7 +252,7 @@ function addMessage(role, content) {
     minute: '2-digit'
   });
   
-  // Build HTML safely (avoid complex template strings)
+  // Build HTML exactly like original
   let html = '<div class="msg-av ';
   html += role === 'user' ? 'u-av">Me' : 'ai-av">F';
   html += '</div><div class="msg-content"><div class="msg-bubble ';
@@ -312,9 +312,7 @@ async function handleSendMessage() {
     return;
   }
   
-  // ============================================
   // 1. IMMEDIATE USER FEEDBACK
-  // ============================================
   isStreaming = true;
   sendBtn.disabled = true;
   
@@ -332,22 +330,24 @@ async function handleSendMessage() {
   // Update phase
   updatePhase();
   
-  // ============================================
   // 2. ASYNC AI PROCESSING
-  // ============================================
   console.log('Starting AI processing');
   
   // Show typing indicator
   showTyping();
   
   try {
-    // Call AI API
-    const response = await fetch('/api/chat', {
+    // 调用 Supabase Edge Functions
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
       body: JSON.stringify({
         messages: messages,
-        conversationId: null
+        conversationId: null,
+        userId: 'demo-user'
       })
     });
     
@@ -359,39 +359,45 @@ async function handleSendMessage() {
     
     // Remove typing indicator
     removeTyping();
-
+    
     // Read SSE stream
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let assistantContent = '';
-
-    // Create message bubble for streaming
+    let assistantBubble = null;
+    
+    // Create empty message bubble for streaming
     const msgDiv = document.createElement('div');
     msgDiv.className = 'msg-group';
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    
+    const time = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
     msgDiv.innerHTML = '<div class="msg-av ai-av">F</div><div class="msg-content"><div class="msg-bubble ai-bubble"></div><div class="msg-time">First Principles · ' + time + '</div></div>';
     chatEl.appendChild(msgDiv);
-    const bubbleContent = msgDiv.querySelector('.msg-bubble');
+    assistantBubble = msgDiv.querySelector('.msg-bubble');
     scrollToBottom();
-
+    
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
+      
       const chunk = decoder.decode(value);
       const lines = chunk.split('\n');
-
+      
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6).trim();
           if (data === '[DONE]') break;
-
+          
           try {
             const parsed = JSON.parse(data);
             if (parsed.content) {
               assistantContent += parsed.content;
-              if (bubbleContent) {
-                bubbleContent.textContent = assistantContent;
+              if (assistantBubble) {
+                assistantBubble.textContent = assistantContent;
               }
               scrollToBottom();
             }
@@ -401,10 +407,10 @@ async function handleSendMessage() {
         }
       }
     }
-
+    
     messages.push({ role: 'assistant', content: assistantContent });
     questionCount++;
-
+    
     console.log('AI response shown, question count:', questionCount);
     
   } catch (error) {
@@ -416,9 +422,7 @@ async function handleSendMessage() {
     // Show error message
     addMessage('assistant', '⚠️ Error: ' + error.message + '. Please try again.');
   } finally {
-    // ============================================
     // 3. RESET STATE
-    // ============================================
     isStreaming = false;
     sendBtn.disabled = false;
     
@@ -480,6 +484,14 @@ function setupEventListeners() {
       this.style.height = Math.min(this.scrollHeight, 130) + 'px';
     });
   }
+  
+  // New session button
+  const newSessionBtn = document.getElementById('new-session-btn');
+  if (newSessionBtn) {
+    newSessionBtn.addEventListener('click', function() {
+      window.location.href = '/chat/new';
+    });
+  }
 }
 
 // Initialize when page loads
@@ -495,5 +507,3 @@ if (document.readyState === 'loading') {
 
 console.log('=== Script initialization complete ===');
 </script>
-</body>
-</html>
