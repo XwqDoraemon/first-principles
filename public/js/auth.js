@@ -24,6 +24,7 @@
   const supabaseClient = window.supabaseClient;
   window.APP_SUPABASE_URL = AUTH_SUPABASE_URL;
   window.APP_SUPABASE_ANON_KEY = AUTH_SUPABASE_ANON_KEY;
+  let creditsRequestInFlight = null;
 
   async function getCurrentUser() {
     try {
@@ -162,33 +163,65 @@
     }
   }
 
-  async function displayUserCredits() {
-    const session = await getCurrentSession();
-    if (!session?.user) return;
+  function renderUserCredits(data) {
+    const creditsDisplay = document.getElementById('userCredits');
+    if (!creditsDisplay) return;
 
-    try {
-      const response = await fetch(`${AUTH_SUPABASE_URL}/functions/v1/payment/credits`, {
-        method: 'GET',
-        headers: {
-          'apikey': AUTH_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
+    const freeSessions = data.freeSessionsRemaining || 0;
+    const credits = data.credits || 0;
+    creditsDisplay.textContent = freeSessions > 0
+      ? `免费 ${freeSessions} 次 · ${credits} 积分`
+      : `${credits} 积分`;
+  }
 
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const creditsDisplay = document.getElementById('userCredits');
-      if (creditsDisplay) {
-        const freeSessions = data.freeSessionsRemaining || 0;
-        const credits = data.credits || 0;
-        creditsDisplay.textContent = freeSessions > 0
-          ? `免费 ${freeSessions} 次 · ${credits} 积分`
-          : `${credits} 积分`;
-      }
-    } catch (error) {
-      console.error('Failed to load credits:', error);
+  async function fetchCreditsWithSession(session) {
+    if (!session?.access_token) {
+      return null;
     }
+
+    return fetch(`${AUTH_SUPABASE_URL}/functions/v1/payment/credits`, {
+      method: 'GET',
+      headers: {
+        'apikey': AUTH_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+  }
+
+  async function displayUserCredits() {
+    if (creditsRequestInFlight) {
+      return creditsRequestInFlight;
+    }
+
+    creditsRequestInFlight = (async () => {
+      let session = await getCurrentSession();
+      if (!session?.user) return;
+
+      try {
+        let response = await fetchCreditsWithSession(session);
+
+        if (response?.status === 401) {
+          const { data, error } = await supabaseClient.auth.refreshSession();
+          if (!error && data.session?.access_token) {
+            session = data.session;
+            response = await fetchCreditsWithSession(session);
+          }
+        }
+
+        if (!response?.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        renderUserCredits(data);
+      } catch (error) {
+        console.error('Failed to load credits:', error);
+      } finally {
+        creditsRequestInFlight = null;
+      }
+    })();
+
+    return creditsRequestInFlight;
   }
 
   window.signInWithGoogle = signInWithGoogle;

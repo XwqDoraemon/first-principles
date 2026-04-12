@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const supabase = createClient(
+const adminSupabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
@@ -40,12 +40,21 @@ function matchesRoute(pathname: string, route: string) {
 
 async function getAuthenticatedUser(req: Request) {
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!authHeader) {
     throw new Error('Missing authorization header')
   }
 
-  const token = authHeader.replace('Bearer ', '').trim()
-  const { data: { user }, error } = await supabase.auth.getUser(token)
+  const requestSupabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    }
+  )
+
+  const { data: { user }, error } = await requestSupabase.auth.getUser()
 
   if (error || !user) {
     throw new Error('Invalid user token')
@@ -135,7 +144,7 @@ async function capturePayPalOrder(orderId: string) {
 }
 
 async function completeOrder(orderId: string) {
-  const { data: order, error: orderError } = await supabase
+  const { data: order, error: orderError } = await adminSupabase
     .from('orders')
     .select('id, user_id, credits_purchased, status, metadata')
     .eq('payment_intent_id', orderId)
@@ -154,7 +163,7 @@ async function completeOrder(orderId: string) {
   }
 
   const completedAt = new Date().toISOString()
-  const { error: updateError } = await supabase
+  const { error: updateError } = await adminSupabase
     .from('orders')
     .update({
       status: 'completed',
@@ -167,7 +176,7 @@ async function completeOrder(orderId: string) {
   }
 
   const plan = order.metadata?.plan || 'paypal'
-  const { error: creditError } = await supabase.rpc('add_credits', {
+  const { error: creditError } = await adminSupabase.rpc('add_credits', {
     user_id: order.user_id,
     amount: order.credits_purchased,
     transaction_type: 'purchase',
@@ -204,7 +213,7 @@ serve(async (req) => {
       }
 
       const paypalOrder = await createPayPalOrder(plan, user.id)
-      const { data: order, error: insertError } = await supabase
+      const { data: order, error: insertError } = await adminSupabase
         .from('orders')
         .insert({
           user_id: user.id,

@@ -6,7 +6,7 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   apiVersion: '2023-10-16',
 })
 
-const supabase = createClient(
+const adminSupabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
@@ -16,13 +16,13 @@ const PRICING_PLANS = {
   basic: {
     name: 'Basic Pack',
     amount: 0.99, // $0.99
-    credits: 5,
+    credits: 10,
     currency: 'usd',
   },
   pro: {
     name: 'Pro Pack',
     amount: 4.99, // $4.99
-    credits: 30,
+    credits: 60,
     currency: 'usd',
   },
 }
@@ -34,6 +34,23 @@ const corsHeaders = {
 
 function matchesRoute(pathname: string, route: string) {
   return pathname === route || pathname.endsWith(route)
+}
+
+function createRequestSupabaseClient(req: Request) {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return null
+  }
+
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    }
+  )
 }
 
 serve(async (req) => {
@@ -72,7 +89,7 @@ serve(async (req) => {
       })
 
       // 在数据库中创建订单记录
-      const { data: order, error: orderError } = await supabase
+      const { data: order, error: orderError } = await adminSupabase
         .from('orders')
         .insert({
           user_id: userId,
@@ -128,7 +145,7 @@ serve(async (req) => {
         const { userId, plan, credits } = paymentIntent.metadata
 
         // 更新订单状态
-        const { error: updateError } = await supabase
+        const { error: updateError } = await adminSupabase
           .from('orders')
           .update({
             status: 'completed',
@@ -141,7 +158,7 @@ serve(async (req) => {
         }
 
         // 添加积分到用户账户
-        const { error: creditError } = await supabase.rpc('add_credits', {
+        const { error: creditError } = await adminSupabase.rpc('add_credits', {
           user_id: userId,
           amount: parseInt(credits),
           transaction_type: 'purchase',
@@ -159,7 +176,7 @@ serve(async (req) => {
       if (event.type === 'payment_intent.payment_failed') {
         const paymentIntent = event.data.object
 
-        await supabase
+        await adminSupabase
           .from('orders')
           .update({ status: 'failed' })
           .eq('payment_intent_id', paymentIntent.id)
@@ -172,19 +189,18 @@ serve(async (req) => {
 
     // 获取用户积分余额
     if (method === 'GET' && matchesRoute(path, '/credits')) {
-      const authHeader = req.headers.get('Authorization')
-      if (!authHeader) {
+      const requestSupabase = createRequestSupabaseClient(req)
+      if (!requestSupabase) {
         throw new Error('Missing authorization header')
       }
 
-      const token = authHeader.replace('Bearer ', '')
-      const { data: { user }, error } = await supabase.auth.getUser(token)
+      const { data: { user }, error } = await requestSupabase.auth.getUser()
 
       if (error || !user) {
         throw new Error('Invalid user token')
       }
 
-      const { data: userData } = await supabase
+      const { data: userData } = await adminSupabase
         .from('users')
         .select('credits_balance, total_sessions, free_sessions_remaining')
         .eq('id', user.id)
