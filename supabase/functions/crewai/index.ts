@@ -55,7 +55,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: '未授权访问',
+          error: 'Unauthorized access',
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -72,7 +72,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: '缺少 action 参数',
+          error: 'Missing action parameter',
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -89,7 +89,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               success: false,
-              error: '开始思考需要用户输入',
+              error: 'User input is required to start thinking',
             }),
             {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -110,7 +110,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               success: false,
-              error: '检查状态需要 sessionId',
+              error: 'sessionId is required to check status',
             }),
             {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -126,7 +126,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               success: false,
-              error: '取消会话需要 sessionId',
+              error: 'sessionId is required to cancel a session',
             }),
             {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -145,7 +145,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: `不支持的 action: ${action}`,
+            error: `Unsupported action: ${action}`,
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -225,7 +225,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || '服务器内部错误',
+        error: error.message || 'Internal server error',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -248,7 +248,7 @@ async function callLocalCrewAI(endpoint: string, data: any): Promise<any> {
   })
 
   if (!response.ok) {
-    throw new Error(`CrewAI 服务错误: ${response.status}`)
+    throw new Error(`CrewAI service error: ${response.status}`)
   }
 
   return await response.json()
@@ -280,11 +280,11 @@ async function startThinkingSession(params: {
     }
 
   } catch (error) {
-    console.error('启动思考会话失败:', error)
+    console.error('Failed to start thinking session:', error)
     
     return {
       success: false,
-      error: '无法连接到思考服务',
+      error: 'Unable to connect to the thinking service',
       data: {
         fallback: true,
         error: error.message,
@@ -311,11 +311,11 @@ async function getSessionStatus(sessionId: string): Promise<CrewAIResponse> {
     }
 
   } catch (error) {
-    console.error('获取会话状态失败:', error)
+    console.error('Failed to get session status:', error)
     
     return {
       success: false,
-      error: '无法获取会话状态',
+      error: 'Unable to get session status',
       data: {
         session_id: sessionId,
         error: error.message,
@@ -340,11 +340,11 @@ async function cancelSession(sessionId: string): Promise<CrewAIResponse> {
     }
 
   } catch (error) {
-    console.error('取消会话失败:', error)
+    console.error('Failed to cancel session:', error)
     
     return {
       success: false,
-      error: '无法取消会话',
+      error: 'Unable to cancel session',
       data: {
         session_id: sessionId,
         error: error.message,
@@ -369,11 +369,11 @@ async function listUserSessions(userId: string): Promise<CrewAIResponse> {
     }
 
   } catch (error) {
-    console.error('列出会话失败:', error)
+    console.error('Failed to list sessions:', error)
     
     return {
       success: false,
-      error: '无法列出会话',
+      error: 'Unable to list sessions',
       data: {
         user_id: userId,
         error: error.message,

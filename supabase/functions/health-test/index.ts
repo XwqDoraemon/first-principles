@@ -17,7 +17,7 @@ serve(async (req) => {
     const response = {
       status: 'healthy' as const,
       timestamp: new Date().toISOString(),
-      message: 'Edge Functions 测试成功',
+      message: 'Edge Functions test succeeded',
       services: {
         supabase: { status: 'healthy' as const },
         crewai: { status: 'unknown' as const },
@@ -45,7 +45,7 @@ serve(async (req) => {
       status: 'unhealthy' as const,
       timestamp: new Date().toISOString(),
       error: error.message,
-      message: '健康检查失败',
+      message: 'Health check failed',
     }
 
     return new Response(

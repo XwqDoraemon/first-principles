@@ -161,6 +161,90 @@
     text-decoration: none;
     cursor: pointer;
   }
+  .summary-card {
+    margin-top: 8px;
+    background: linear-gradient(180deg, rgba(184,169,138,0.09), rgba(255,255,255,0.03));
+    border: 0.5px solid rgba(184,169,138,0.18);
+    border-radius: 18px;
+    padding: 22px 22px 18px;
+  }
+  .summary-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .summary-kicker {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(184,169,138,0.62);
+    margin-bottom: 6px;
+  }
+  .summary-title {
+    font-family: 'Lora', serif;
+    font-size: 22px;
+    color: #F0EDE4;
+  }
+  .summary-copy {
+    background: rgba(255,255,255,0.06);
+    border: 0.5px solid rgba(255,255,255,0.1);
+    color: rgba(232,230,223,0.78);
+    border-radius: 999px;
+    padding: 9px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .summary-block {
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 14px 15px;
+  }
+  .summary-block.full {
+    grid-column: 1 / -1;
+  }
+  .summary-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(232,230,223,0.28);
+    margin-bottom: 8px;
+  }
+  .summary-text {
+    font-size: 13px;
+    line-height: 1.65;
+    color: rgba(232,230,223,0.84);
+  }
+  .summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .summary-item {
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(232,230,223,0.82);
+    padding-left: 14px;
+    position: relative;
+  }
+  .summary-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #B8A98A;
+  }
 
   .sidebar-right { border-left: 0.5px solid rgba(255,255,255,0.07); padding: 24px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
   .sidebar-right::-webkit-scrollbar { width: 3px; }
@@ -184,6 +268,10 @@
   .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
   .empty-title { font-size: 16px; color: rgba(232,230,223,0.5); margin-bottom: 8px; }
   .empty-desc { font-size: 13px; color: rgba(232,230,223,0.25); line-height: 1.6; max-width: 320px; margin: 0 auto; }
+  @media (max-width: 900px) {
+    .summary-grid { grid-template-columns: 1fr; }
+    .summary-head { flex-direction: column; align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
@@ -196,13 +284,13 @@
     </ul>
     <div id="userMenu" class="user-menu" style="display: none;">
       <div class="user-info">
-        <div class="user-credits" id="userCredits">0 积分</div>
+        <div class="user-credits" id="userCredits">0 credits</div>
         <div class="user-name" id="userName"></div>
         <div class="user-avatar" id="userAvatar">U</div>
       </div>
     </div>
     <div id="authButtonContainer">
-      <button class="auth-btn" onclick="openAuthModal()">登录</button>
+      <button class="auth-btn" onclick="openAuthModal()">Sign in</button>
     </div>
   </div>
 </nav>
@@ -222,7 +310,7 @@
       </div>
       <div class="phase-pill">
         <div class="phase-dot"></div>
-        <span class="phase-text" id="phaseText">THINKING</span>
+        <span class="phase-text" id="phaseText">UNDERSTAND</span>
       </div>
     </div>
 
@@ -269,8 +357,8 @@
             <div class="step-line"></div>
           </div>
           <div class="step-right">
-            <div class="step-name">Deconstruct</div>
-            <div class="step-desc">Break down assumptions</div>
+            <div class="step-name">Challenge</div>
+            <div class="step-desc">Test assumptions</div>
           </div>
         </div>
         <div class="step-row" data-step="3">
@@ -289,8 +377,8 @@
             <div class="step-line"></div>
           </div>
           <div class="step-right">
-            <div class="step-name">Act</div>
-            <div class="step-desc">Define clear actions</div>
+            <div class="step-name">Decide</div>
+            <div class="step-desc">Choose the path that matters</div>
           </div>
         </div>
         <div class="step-row" data-step="5">
@@ -298,8 +386,8 @@
             <div class="step-circle">5</div>
           </div>
           <div class="step-right">
-            <div class="step-name">Complete</div>
-            <div class="step-desc">Summary & Next Steps</div>
+            <div class="step-name">Act</div>
+            <div class="step-desc">Commit to next steps</div>
           </div>
         </div>
       </div>
@@ -315,7 +403,8 @@ const CHAT_SUPABASE_ANON_KEY = 'sb_publishable_wnQx8LZ7qUgVAsVOaEnuVQ_Ede5tM3w';
 // ==================== 状态管理 ====================
 let currentConversationId = null;
 let messages = [];
-let currentPhase = 1; // 当前阶段 1-4
+let currentPhase = 1; // Current phase 1-5
+const MAX_SESSION_USER_TURNS = 15;
 
 // ==================== DOM 元素 ====================
 const userInput = document.getElementById('userInput');
@@ -327,6 +416,164 @@ const phaseText = document.getElementById('phaseText');
 const billingNotice = document.getElementById('billingNotice');
 const billingNoticeText = document.getElementById('billingNoticeText');
 const billingNoticeActions = document.getElementById('billingNoticeActions');
+const phaseMeta = {
+  1: { name: 'Understand', pill: 'UNDERSTAND' },
+  2: { name: 'Challenge', pill: 'CHALLENGE' },
+  3: { name: 'Rebuild', pill: 'REBUILD' },
+  4: { name: 'Decide', pill: 'DECIDE' },
+  5: { name: 'Act', pill: 'ACT' },
+};
+
+function normalizeSummary(summary) {
+  if (!summary || typeof summary !== 'object') {
+    return null;
+  }
+
+  const normalizeList = (value, fallback = []) => {
+    if (Array.isArray(value)) {
+      return value.map(item => String(item).trim()).filter(Boolean);
+    }
+    if (typeof value === 'string' && value.trim()) {
+      return [value.trim()];
+    }
+    return fallback;
+  };
+
+  return {
+    core_problem: String(summary.core_problem || '').trim(),
+    thinking_traps: normalizeList(summary.thinking_traps),
+    primary_tension: String(summary.primary_tension || '').trim(),
+    secondary_tension: String(summary.secondary_tension || '').trim(),
+    clarity: String(summary.clarity || '').trim(),
+    next_actions: normalizeList(summary.next_actions),
+    takeaway: String(summary.takeaway || '').trim(),
+  };
+}
+
+function removeExistingSummaryCard() {
+  document.getElementById('sessionSummaryCard')?.remove();
+}
+
+function buildSummaryText(summary) {
+  return [
+    'Session Summary',
+    '',
+    `Core problem: ${summary.core_problem}`,
+    '',
+    'Thinking traps:',
+    ...summary.thinking_traps.map((item) => `- ${item}`),
+    '',
+    `Primary tension: ${summary.primary_tension}`,
+    `Secondary tension: ${summary.secondary_tension}`,
+    '',
+    `What became clear: ${summary.clarity}`,
+    '',
+    'Next actions:',
+    ...summary.next_actions.map((item) => `- ${item}`),
+    '',
+    `Takeaway: ${summary.takeaway}`,
+  ].join('\n');
+}
+
+function createSummaryList(items) {
+  const list = document.createElement('div');
+  list.className = 'summary-list';
+  items.forEach((item) => {
+    const row = document.createElement('div');
+    row.className = 'summary-item';
+    row.textContent = item;
+    list.appendChild(row);
+  });
+  return list;
+}
+
+function createSummaryBlock(label, content, options = {}) {
+  const block = document.createElement('div');
+  block.className = `summary-block${options.full ? ' full' : ''}`;
+
+  const title = document.createElement('div');
+  title.className = 'summary-label';
+  title.textContent = label;
+
+  block.appendChild(title);
+
+  if (Array.isArray(content)) {
+    block.appendChild(createSummaryList(content));
+  } else {
+    const text = document.createElement('div');
+    text.className = 'summary-text';
+    text.textContent = content;
+    block.appendChild(text);
+  }
+
+  return block;
+}
+
+function renderSessionSummary(summary) {
+  const normalized = normalizeSummary(summary);
+  if (!normalized) return;
+
+  removeExistingSummaryCard();
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'summary-card';
+  wrapper.id = 'sessionSummaryCard';
+
+  const head = document.createElement('div');
+  head.className = 'summary-head';
+
+  const titleWrap = document.createElement('div');
+
+  const kicker = document.createElement('div');
+  kicker.className = 'summary-kicker';
+  kicker.textContent = 'End-of-session clarity';
+
+  const title = document.createElement('div');
+  title.className = 'summary-title';
+  title.textContent = 'Your First-Principles Summary';
+
+  titleWrap.appendChild(kicker);
+  titleWrap.appendChild(title);
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'summary-copy';
+  copyBtn.type = 'button';
+  copyBtn.textContent = 'Copy summary';
+  copyBtn.onclick = async () => {
+    const summaryText = buildSummaryText(normalized);
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      copyBtn.textContent = 'Copied';
+      window.setTimeout(() => {
+        copyBtn.textContent = 'Copy summary';
+      }, 1800);
+    } catch (error) {
+      console.warn('Failed to copy summary:', error);
+      copyBtn.textContent = 'Copy failed';
+      window.setTimeout(() => {
+        copyBtn.textContent = 'Copy summary';
+      }, 1800);
+    }
+  };
+
+  head.appendChild(titleWrap);
+  head.appendChild(copyBtn);
+  wrapper.appendChild(head);
+
+  const grid = document.createElement('div');
+  grid.className = 'summary-grid';
+  grid.appendChild(createSummaryBlock('Core problem', normalized.core_problem));
+  grid.appendChild(createSummaryBlock('What became clear', normalized.clarity));
+  grid.appendChild(createSummaryBlock('Thinking traps', normalized.thinking_traps));
+  grid.appendChild(createSummaryBlock('Next 3 actions', normalized.next_actions));
+  grid.appendChild(createSummaryBlock('Primary tension', normalized.primary_tension));
+  grid.appendChild(createSummaryBlock('Secondary tension', normalized.secondary_tension));
+  grid.appendChild(createSummaryBlock('One sentence to remember', normalized.takeaway, { full: true }));
+
+  wrapper.appendChild(grid);
+  chatMessages.appendChild(wrapper);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
 
 // ==================== Stepper 管理 ====================
 
@@ -339,10 +586,11 @@ function detectPhaseFromText(text) {
   
   // 阶段关键词映射
   const phaseKeywords = {
-    1: ['understand', 'grasp', 'comprehend', 'clarify', '明白', '理解', '了解', '澄清'],
-    2: ['assumption', 'break down', 'deconstruct', 'challenge', '假设', '打破', '拆解', '质疑'],
-    3: ['rebuild', 'first principles', 'fundamental', 'reconstruct', '重建', '第一性原理', '基本原理', '重构'],
-    4: ['action', 'next step', 'implement', 'execute', '行动', '实施', '执行', '下一步']
+    1: ['understand', 'grasp', 'comprehend', 'clarify', 'core problem'],
+    2: ['assumption', 'challenge', 'question', 'test', 'premise'],
+    3: ['rebuild', 'first principles', 'fundamental', 'reconstruct'],
+    4: ['decide', 'decision', 'choose', 'trade-off', 'priority'],
+    5: ['act', 'action', 'next step', 'implement', 'execute', 'commit']
   };
   
   // 计算每个阶段的关键词匹配度
@@ -365,9 +613,10 @@ function detectPhaseFromText(text) {
   // 如果没有明确关键词，根据对话轮数推测
   if (maxScore === 0) {
     const messageCount = messages.filter(m => m.role === 'assistant').length;
-    if (messageCount >= 6) detectedPhase = 4;
-    else if (messageCount >= 4) detectedPhase = 3;
-    else if (messageCount >= 2) detectedPhase = 2;
+    if (messageCount >= 12) detectedPhase = 5;
+    else if (messageCount >= 9) detectedPhase = 4;
+    else if (messageCount >= 6) detectedPhase = 3;
+    else if (messageCount >= 3) detectedPhase = 2;
     else detectedPhase = 1;
   }
   
@@ -377,8 +626,53 @@ function detectPhaseFromText(text) {
 
 /**
  * 更新 Stepper UI
- * @param {number} phase - 当前阶段 (1-4)
+ * @param {number} phase - 当前阶段 (1-5)
  */
+function updateStepper(phase) {
+  const safePhase = Math.max(1, Math.min(5, phase));
+  currentPhase = safePhase;
+
+  if (phaseText) {
+    phaseText.textContent = phaseMeta[safePhase].pill;
+  }
+
+  const rows = stepper?.querySelectorAll('.step-row') || [];
+  rows.forEach((row, index) => {
+    const step = index + 1;
+    const circle = row.querySelector('.step-circle');
+    const name = row.querySelector('.step-name');
+
+    circle?.classList.remove('s-cur', 's-done');
+    name?.classList.remove('s-cur');
+
+    if (step < safePhase) {
+      circle?.classList.add('s-done');
+    } else if (step === safePhase) {
+      circle?.classList.add('s-cur');
+      name?.classList.add('s-cur');
+    }
+  });
+}
+
+function getSessionTurnCount() {
+  return messages.filter((message) => message.role === 'user').length;
+}
+
+function isSessionComplete() {
+  return currentPhase === 5 || getSessionTurnCount() >= MAX_SESSION_USER_TURNS;
+}
+
+function setComposerLocked(locked) {
+  userInput.disabled = locked;
+  if (locked) {
+    sendBtn.disabled = true;
+    userInput.placeholder = 'Start a new thinking session to continue';
+  } else {
+    userInput.disabled = false;
+    userInput.placeholder = "What's on your mind?";
+    sendBtn.disabled = !userInput.value.trim();
+  }
+}
 
 function renderBillingNotice(message, options = {}) {
   if (!billingNotice || !billingNoticeText || !billingNoticeActions) return;
@@ -391,7 +685,7 @@ function renderBillingNotice(message, options = {}) {
     const link = document.createElement('a');
     link.href = '/pricing.html';
     link.className = 'billing-link-btn';
-    link.textContent = '去充值';
+    link.textContent = 'Recharge now';
     billingNoticeActions.appendChild(link);
   }
 
@@ -399,7 +693,7 @@ function renderBillingNotice(message, options = {}) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'billing-link-btn';
-    button.textContent = '立即登录';
+    button.textContent = 'Sign in now';
     button.onclick = () => window.openAuthModal?.();
     billingNoticeActions.appendChild(button);
   }
@@ -487,7 +781,7 @@ async function ensureReadyToSend() {
   const { session, credits, creditsFetchFailed, unauthorized } = await getConversationAccessState();
 
   if (!session?.user) {
-    renderBillingNotice('登录后才能开始新的思考会话。登录成功后你会自动获得 2 次免费机会；Google 页面里若出现 `supabase.co`，属于官方安全认证跳转。', {
+    renderBillingNotice('You need to sign in before starting a new thinking session. You will receive 2 free sessions after signing in. If Google shows `supabase.co`, that is part of the normal secure authentication flow.', {
       tone: 'error',
       showLoginButton: true,
     });
@@ -517,8 +811,8 @@ async function ensureReadyToSend() {
   const canStartConversation = Boolean(credits?.canStartConversation);
 
   if (!canStartConversation) {
-    const message = `你的免费次数已经用完，当前只有 ${creditBalance} 积分；开启新的思考会话需要 2 积分。`;
-    renderBillingNotice(`${message} 现在充值后即可继续。`, {
+    const message = `Your free sessions are used up and you currently have ${creditBalance} credits. Starting a new thinking session requires 2 credits.`;
+    renderBillingNotice(`${message} Recharge now to keep going.`, {
       tone: 'error',
       showPricingLink: true,
     });
@@ -527,9 +821,9 @@ async function ensureReadyToSend() {
   }
 
   if (freeSessions > 0) {
-    renderBillingNotice(`本次将消耗 1 次免费机会。你还剩 ${freeSessions} 次免费会话。`);
+    renderBillingNotice(`This message will use 1 free session. You still have ${freeSessions} free sessions left.`);
   } else {
-    renderBillingNotice(`本次将消耗 2 积分。你当前还有 ${creditBalance} 积分。`, {
+    renderBillingNotice(`This message will use 2 credits. You currently have ${creditBalance} credits remaining.`, {
       showPricingLink: creditBalance <= 2,
     });
   }
@@ -615,10 +909,11 @@ async function callSupabaseChat(messages, userId = 'local-user') {
             }
 
             // 处理内容 - 可能是双重 JSON
-            if (parsed.reply) {
-              // 尝试解析 content 字段（可能包含 JSON）
+            const chunkContent = parsed.reply || parsed.content;
+            if (chunkContent) {
+              // 尝试解析字段内容（可能包含 JSON）
               try {
-                const innerParsed = JSON.parse(parsed.reply);
+                const innerParsed = JSON.parse(chunkContent);
                 if (innerParsed.reply && innerParsed.phase) {
                   // 双重 JSON: content 字段包含 JSON 字符串
                   fullContent += innerParsed.reply;
@@ -631,11 +926,11 @@ async function callSupabaseChat(messages, userId = 'local-user') {
                   }
                 } else {
                   // content 是纯文本
-                  fullContent += parsed.reply;
+                  fullContent += chunkContent;
                 }
               } catch (e) {
                 // content 不是 JSON，当作纯文本
-                fullContent += parsed.reply;
+                fullContent += chunkContent;
               }
               
               updateAIMessage(fullContent);
@@ -672,7 +967,8 @@ function parseAIResponse(text) {
         console.log('✅ Direct JSON parsed:', { phase: parsed.phase, contentLength: parsed.reply.length });
         return {
           content: parsed.reply,
-          phase: parsed.phase
+          phase: parsed.phase,
+          summary: normalizeSummary(parsed.summary)
         };
       } else {
         console.warn('⚠️  JSON parsed but missing fields:', Object.keys(parsed));
@@ -692,7 +988,8 @@ function parseAIResponse(text) {
         console.log('✅ Double JSON parsed:', { phase: innerParsed.phase, contentLength: innerParsed.reply.length });
         return {
           content: innerParsed.reply,
-          phase: innerParsed.phase
+          phase: innerParsed.phase,
+          summary: normalizeSummary(innerParsed.summary)
         };
       }
     }
@@ -710,7 +1007,8 @@ function parseAIResponse(text) {
         console.log('✅ Extracted JSON parsed:', { phase: parsed.phase, contentLength: parsed.reply.length });
         return {
           content: parsed.reply,
-          phase: parsed.phase
+          phase: parsed.phase,
+          summary: normalizeSummary(parsed.summary)
         };
       }
     }
@@ -722,7 +1020,8 @@ function parseAIResponse(text) {
   console.log('⚠️  Treating as plain text, length:', text.length);
   return {
     content: cleanedText,
-    phase: null
+    phase: null,
+    summary: null
   };
 }
 
@@ -846,8 +1145,9 @@ function hideTyping() {
 async function sendMessage() {
   const content = userInput.value.trim();
   // 检查是否处于第 5 阶段（完成阶段）
-  if (currentPhase === 5) {
-    addMessageToUI('assistant', '本次思考已经完成。如果你想开始新的思考话题，请点击左侧的"＋ Start thinking"按钮开始新对话。');
+  if (isSessionComplete()) {
+    setComposerLocked(true);
+    addMessageToUI('assistant', 'This thinking session is complete. If you want to explore a new topic, click "＋ Start thinking" on the left to begin a new conversation.');
     userInput.value = '';
     userInput.style.height = 'auto';
     return;
@@ -908,7 +1208,7 @@ async function sendMessage() {
       const parsed = parseAIResponse(response.content);
       
       // 使用纯文本内容（去掉可能的 JSON 包装）
-      const finalContent = parsed.reply || response.content;
+      const finalContent = parsed.content || response.content;
       
       // 添加到 messages 数组
       messages.push({ role: 'assistant', content: finalContent });
@@ -916,6 +1216,18 @@ async function sendMessage() {
       // 更新阶段（如果有）
       if (parsed.phase && parsed.phase !== currentPhase) {
         updateStepper(parsed.phase);
+      }
+
+      if (parsed.summary) {
+        renderSessionSummary(parsed.summary);
+      }
+
+      if (parsed.phase === 5 || getSessionTurnCount() >= MAX_SESSION_USER_TURNS) {
+        updateStepper(5);
+        setComposerLocked(true);
+        renderBillingNotice('This thinking session has reached its natural conclusion. Start a new session to explore a new problem.', {
+          tone: 'default',
+        });
       }
       
       // 注意：不调用 addMessageToUI，因为内容已经在流式响应中显示了
@@ -928,7 +1240,7 @@ async function sendMessage() {
     hideTyping();
     console.error('Failed to send message:', error);
     if (error.status === 401) {
-      addMessageToUI('assistant', '请先登录，再开始新的思考会话。');
+      addMessageToUI('assistant', 'Please sign in before starting a new thinking session.');
       window.openAuthModal?.();
       return;
     }
@@ -938,20 +1250,32 @@ async function sendMessage() {
       const freeSessionsRemaining = error.details?.freeSessionsRemaining ?? 0;
       addMessageToUI(
         'assistant',
-        `当前无法开启新的思考会话。你剩余 ${freeSessionsRemaining} 次免费机会、${remainingCredits} 积分，而新会话需要 2 积分。请先充值后再开始新一轮聊天。`
+        `You cannot start a new thinking session right now. You have ${freeSessionsRemaining} free sessions and ${remainingCredits} credits remaining, while a new session requires 2 credits. Please recharge before starting another chat.`
       );
-      renderBillingNotice('积分不足，当前无法开始新会话。充值后即可继续。', {
+      renderBillingNotice('You do not have enough credits to start a new session. Recharge to continue.', {
         tone: 'error',
         showPricingLink: true,
       });
-      openRechargeModal(`你还剩 ${freeSessionsRemaining} 次免费机会、${remainingCredits} 积分；开启新会话需要 2 积分。`);
+      openRechargeModal(`You have ${freeSessionsRemaining} free sessions and ${remainingCredits} credits remaining. Starting a new session requires 2 credits.`);
       await window.refreshUserCredits?.();
       return;
     }
 
-    addMessageToUI('assistant', '抱歉，连接到 Supabase 失败。请检查网络连接。');
+    if (error.status === 409) {
+      updateStepper(5);
+      setComposerLocked(true);
+      addMessageToUI('assistant', 'This thinking session is already complete. Start a new session on the left if you want to explore a different question.');
+      renderBillingNotice('This session is complete. Start a new one to keep going.', {
+        tone: 'default',
+      });
+      return;
+    }
+
+    addMessageToUI('assistant', 'Sorry, we could not connect to Supabase. Please check your network connection.');
   } finally {
-    sendBtn.disabled = false;
+    if (!userInput.disabled) {
+      sendBtn.disabled = false;
+    }
   }
 }
 
@@ -960,7 +1284,9 @@ function createNewConversation() {
   currentConversationId = null;
   messages = [];
   currentPhase = 1; // 重置阶段
+  removeExistingSummaryCard();
   updateStepper(1); // 重置 UI
+  setComposerLocked(false);
   clearBillingNotice();
   closeRechargeModal();
   
@@ -1001,6 +1327,15 @@ newChatBtn.addEventListener('click', createNewConversation);
 document.addEventListener('DOMContentLoaded', async () => {
   await checkSupabaseHealth();
   clearBillingNotice();
+  updateStepper(1);
+  const urlParams = new URLSearchParams(window.location.search);
+  const starterPrompt = urlParams.get('prompt');
+  if (starterPrompt) {
+    userInput.value = starterPrompt;
+    userInput.style.height = 'auto';
+    userInput.style.height = `${userInput.scrollHeight}px`;
+    sendBtn.disabled = false;
+  }
   userInput.focus();
   console.log('🚀 First Principles v3.0.0 - Supabase Serverless');
   console.log('📍 Stepper 实时更新已启用');
@@ -1041,7 +1376,7 @@ window.closeRechargeModal = closeRechargeModal;
     <div class="auth-logo">
       <span style="font-size: 48px;">🧠</span>
       <h2>First Principles</h2>
-      <p>登录后才能开始新的思考会话，并安全同步免费次数、积分与历史记录</p>
+      <p>Sign in to start a new thinking session and securely sync your free sessions, credits, and history.</p>
     </div>
 
     <div class="auth-buttons">
@@ -1052,13 +1387,13 @@ window.closeRechargeModal = closeRechargeModal;
           <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
           <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.277C4.672 5.146 6.656 3.58 9 3.58z" fill="#EA4335"/>
         </svg>
-        使用 Google 继续
+        Continue with Google
       </button>
     </div>
 
     <div style="text-align: center; margin-top: 24px;">
       <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4);">
-        首次登录将自动创建账户
+        Your account will be created automatically on first sign-in
       </p>
       <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4); margin-top: 8px; line-height: 1.6;">
         If Google shows `supabase.co`, that is the official authentication service used by First Principles and part of the normal secure sign-in flow.
@@ -1078,13 +1413,13 @@ window.closeRechargeModal = closeRechargeModal;
     </div>
 
     <div class="auth-buttons">
-      <a href="/pricing.html" class="auth-btn-full google-btn" style="text-decoration:none;">前往充值</a>
-      <button class="auth-btn-full" onclick="closeRechargeModal()" style="background:rgba(255,255,255,0.06);color:#E8E6DF;">稍后再说</button>
+      <a href="/pricing.html" class="auth-btn-full google-btn" style="text-decoration:none;">Go to pricing</a>
+      <button class="auth-btn-full" onclick="closeRechargeModal()" style="background:rgba(255,255,255,0.06);color:#E8E6DF;">Maybe later</button>
     </div>
 
     <div style="text-align: center; margin-top: 24px;">
       <p style="font-size: 12px; color: rgba(232, 230, 223, 0.4);">
-        每次开启新的思考会话需要 2 积分
+        Each new thinking session costs 2 credits
       </p>
     </div>
   </div>

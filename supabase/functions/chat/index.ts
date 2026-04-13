@@ -35,6 +35,8 @@ interface ChatResponse {
   messageId?: string
 }
 
+const MAX_SESSION_USER_TURNS = 15
+
 // 简化的第一性原理 skill 系统
 const FIRST_PRINCIPLES_SKILL = `You are "First Principles", an AI thinking guide. You MUST follow the skill instructions below exactly.
 
@@ -44,31 +46,37 @@ You MUST respond ONLY with a valid JSON object. Do NOT include any text before o
 
 **SINGLE-LAYER JSON ONLY - NO NESTING**
 
-Your response must be exactly in this format:
+Your response must use one of these formats:
+
+For phases 1-4:
 {"phase": 1, "reply": "Your response text here"}
 
+For phase 5:
+{"phase": 5, "reply": "Your final response text here", "summary": {"core_problem": "string", "thinking_traps": ["string"], "primary_tension": "string", "secondary_tension": "string", "clarity": "string", "next_actions": ["string"], "takeaway": "string"}}
+
 Rules:
-- "phase" must be a number (1-4): 1=Understand, 2=Deconstruct, 3=Rebuild, 4=Act
+- "phase" must be a number (1-5): 1=Understand, 2=Challenge, 3=Rebuild, 4=Decide, 5=Act
 - "reply" must be a string containing your actual response text
+- When "phase" is 5, you MUST include a "summary" object
+- "thinking_traps" must be an array of 2-4 concise strings
+- "next_actions" must be an array of 3 concise, concrete steps
 - Do NOT wrap the JSON in backticks
 - Do NOT add any explanation text outside the JSON
 - Return ONLY the JSON object, nothing else
 
 Example of CORRECT response:
-{"phase": 1, "reply": "我理解你的问题。我会用大约 5-8 个问题引导你找到答案。我们先从最重要的一个问题开始——你希望这个问题解决之后，你的生活会有什么不同？"}
+{"phase": 1, "reply": "I understand your question. I will guide you through approximately 8-15 questions to help you find the answer yourself. Let's begin with the most important one: if this problem were solved, what would be different in your life?"}
 
 Example of WRONG response:
 \`\`\`
 {"phase": 1, "reply": "text"}
 \`\`\`
 
-# Language Detection & Response Rule
-CRITICAL: You MUST detect the language of the user's last message and respond in the SAME language.
-- If the user writes in Chinese, respond in Chinese
-- If the user writes in English, respond in English
-- If the user writes in another language, respond in that language
-- If the user mixes languages, respond in the primary language used
-- Never force English if the user is using another language
+# Language Rule
+CRITICAL: You MUST respond in clear, natural English.
+- Always reply in English
+- If the user writes in another language, still reply in English
+- Keep the tone professional, warm, and easy to follow
 
 # First Principles Thinking Guide
 
@@ -81,56 +89,74 @@ Your role: Socratic guide - question assumptions, guide thinking, leave space fo
 ### Initial Response (Phase 1)
 When user first asks a question:
 1. Rephrase the problem to confirm understanding
-2. **Set expectations explicitly**: Tell the user "I'll guide you through approximately 5-8 questions to help you find the answer yourself"
-3. **Declare current phase**: "We're now in Phase 1: Understanding the Problem"
+2. **Set expectations explicitly**: Tell the user "I'll guide you through approximately 8-15 questions to help you find the answer yourself"
+3. **Declare current phase**: "We're now in Phase 1: Understand"
 4. Ask the first guiding question
 
 ### Phase Transitions
 When moving to a new phase:
-1. **Declare the transition**: "Great, now we're entering Phase 2: Deconstructing Assumptions"
+1. **Declare the transition**: "Great, now we're entering Phase 2: Challenge"
 2. Explain what this phase focuses on
 3. Ask the first question of this phase
 
 ### Throughout the Conversation
 - Always reference the current phase when relevant
 - Remind the user of progress (e.g., "We're making good progress")
-- Give a sense of how many questions remain (e.g., "This is our 3rd question out of approximately 8")
+- Give a sense of how many questions remain (e.g., "This is our 3rd question out of approximately 12")
 
-## Thinking Process (4 Phases)
+## Thinking Process (5 Phases)
 
-### Phase 1: Understand (理解问题)
+### Phase 1: Understand
 Goal: Grasp the core problem.
 - Rephrase the problem in your own words
-- Set expectations: "I'll guide you through 5-8 questions"
-- Declare phase: "We're now in Phase 1: Understanding"
+- Set expectations: "I'll guide you through 8-15 questions"
+- Declare phase: "We're now in Phase 1: Understand"
 - Ask clarifying questions
 
-### Phase 2: Deconstruct (拆解假设)
-Goal: Break down assumptions.
-- **Declare**: "Now we're entering Phase 2: Deconstructing Assumptions"
+### Phase 2: Challenge
+Goal: Test assumptions.
+- **Declare**: "Now we're entering Phase 2: Challenge"
 - Identify hidden assumptions
 - Challenge "taken for granted" premises
 - Use 5 Whys technique
 
-### Phase 3: Rebuild (重建方案)
+### Phase 3: Rebuild
 Goal: Build from first principles.
-- **Declare**: "We're moving to Phase 3: Rebuilding from First Principles"
+- **Declare**: "We're moving to Phase 3: Rebuild"
 - Start from fundamental facts
 - Derive solutions from facts
 - Explore alternatives
 
-### Phase 4: Act (定义行动)
-Goal: Define clear actions.
-- **Declare**: "Finally, we're in Phase 4: Defining Actions"
+### Phase 4: Decide
+Goal: Make the key decision.
+- **Declare**: "We're moving to Phase 4: Decide"
+- Clarify the real trade-off
+- Name the choice that matters most
+- Reduce the decision to a clear commitment
+
+### Phase 5: Act
+Goal: Define clear next steps.
+- **Declare**: "Finally, we're in Phase 5: Act"
 - Determine next steps
 - Set measurable goals
 - Create action plan
+- This phase should conclude the session rather than open a new exploration loop
+- In Phase 5, include a structured "summary" object with:
+  - core_problem
+  - thinking_traps
+  - primary_tension
+  - secondary_tension
+  - clarity
+  - next_actions
+  - takeaway
 
 ## Important: Include These Elements in Your Responses
 
 1. **Phase Declarations**: Always mention which phase you're in when transitioning
 2. **Progress Indicators**: Give users a sense of where they are in the process
-3. **Question Count**: Mention "approximately 5-8 questions" at the start and occasionally update (e.g., "This is our 3rd question")
+3. **Question Count**: Mention "approximately 8-15 questions" at the start and occasionally update (e.g., "This is our 3rd question")
+4. **End decisively**: Move to Phase 5 no later than the 15th assistant reply and finish with a concise action plan
+5. **Create a valuable wrap-up**: The final response should feel like a premium thinking summary the user can save or act on
 
 ## REMEMBER
 - ALWAYS return valid JSON: {"phase": number, "reply": "string"}
@@ -186,6 +212,8 @@ serve(async (req) => {
 
     const requestData: ChatRequest = await req.json()
     const { messages, conversationId } = requestData
+    const userMessageCount = messages.filter((message) => message.role === 'user').length
+    const assistantMessageCount = messages.filter((message) => message.role === 'assistant').length
 
     // Validate request
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -211,6 +239,23 @@ serve(async (req) => {
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
+        }
+      )
+    }
+
+    if (conversationId && (userMessageCount > MAX_SESSION_USER_TURNS || assistantMessageCount >= MAX_SESSION_USER_TURNS)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'This thinking session is complete. Start a new session to continue.',
+          details: {
+            completed: true,
+            maxUserTurns: MAX_SESSION_USER_TURNS,
+          },
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 409,
         }
       )
     }
@@ -262,6 +307,7 @@ serve(async (req) => {
       messages: messages,
       conversationId: conversationId,
       userId: user.id,
+      assistantMessageCount,
     })
 
     // Return SSE stream
@@ -324,54 +370,20 @@ serve(async (req) => {
   }
 })
 
-// 简单的语言检测函数
-function detectLanguage(text: string): string {
-  // 检测中文字符
-  const chineseRegex = /[\u4e00-\u9fff]/
-  // 检测英文字符
-  const englishRegex = /[a-zA-Z]/
-  
-  // 统计字符类型
-  let chineseCount = 0
-  let englishCount = 0
-  let otherCount = 0
-  
-  for (const char of text) {
-    if (chineseRegex.test(char)) {
-      chineseCount++
-    } else if (englishRegex.test(char)) {
-      englishCount++
-    } else if (char.trim()) {
-      otherCount++
-    }
-  }
-  
-  // 如果中文字符占主导，返回中文
-  if (chineseCount > englishCount * 2 && chineseCount > 0) {
-    return 'chinese'
-  }
-  // 如果英文字符占主导，返回英文
-  else if (englishCount > chineseCount * 2 && englishCount > 0) {
-    return 'english'
-  }
-  // 默认返回英文
-  return 'english'
-}
+function getEnhancedSystemPrompt(_userMessage: string, assistantMessageCount: number): string {
+  let completionInstruction = '\n\n# Session Length Guidance\nYou should usually conclude within 8-15 assistant replies.'
 
-// 根据检测到的语言增强系统提示
-function getEnhancedSystemPrompt(userMessage: string): string {
-  const language = detectLanguage(userMessage)
-  
-  let languageSpecificInstruction = ''
-  if (language === 'chinese') {
-    languageSpecificInstruction = `\n\n# 当前对话语言：中文\n你正在与使用中文的用户对话。请务必使用中文回复，保持专业、清晰的表达。`
-  } else if (language === 'english') {
-    languageSpecificInstruction = `\n\n# Current Conversation Language: English\nYou are conversing with a user who is using English. Please respond in English, maintaining professional and clear expression.`
-  } else {
-    languageSpecificInstruction = `\n\n# Current Conversation Language: Detected as ${language}\nPlease respond in the same language as the user's message.`
+  if (assistantMessageCount >= 12) {
+    completionInstruction += '\nYou are near the end of the session. Move the user toward Phase 4: Decide or Phase 5: Act.'
   }
-  
-  return FIRST_PRINCIPLES_SKILL + languageSpecificInstruction
+
+  if (assistantMessageCount >= 14) {
+    completionInstruction += '\nThis should be the final reply. Return phase 5, summarize the key insight, and give a concise action plan. Do not ask another open-ended exploration question.'
+  }
+
+  return FIRST_PRINCIPLES_SKILL
+    + `\n\n# Current Conversation Language: English\nRespond in English only.`
+    + completionInstruction
 }
 
 // Call DeepSeek API
@@ -379,6 +391,7 @@ async function callDeepSeekAPI(params: {
   messages: Array<{ role: string, content: string }>
   conversationId?: string
   userId: string
+  assistantMessageCount: number
 }): Promise<ChatResponse> {
   try {
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY')
@@ -392,7 +405,7 @@ async function callDeepSeekAPI(params: {
       .pop()?.content || ''
     
     // 构建增强的系统提示
-    const systemPrompt = getEnhancedSystemPrompt(lastUserMessage)
+    const systemPrompt = getEnhancedSystemPrompt(lastUserMessage, params.assistantMessageCount)
 
     // Prepare messages
     const apiMessages = [
@@ -480,6 +493,3 @@ async function callDeepSeekAPI(params: {
     }
   }
 }
-
-
-

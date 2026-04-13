@@ -32,11 +32,11 @@ serve(async (req) => {
 
     const response = {
       success: true,
-      message: '聊天测试成功',
+      message: 'Chat test succeeded',
       timestamp: new Date().toISOString(),
       request: requestData,
       response: {
-        content: '这是一个测试回复。实际部署后，这里会是 AI 的回复。',
+        content: 'This is a test reply. After deployment, the AI response will appear here.',
         model: 'test-model',
         tokens: 10,
         thinking: {
@@ -64,7 +64,7 @@ serve(async (req) => {
       success: false,
       error: error.message,
       timestamp: new Date().toISOString(),
-      message: '聊天服务暂时不可用'
+      message: 'Chat service is temporarily unavailable'
     }
 
     return new Response(

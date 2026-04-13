@@ -25,7 +25,7 @@ serve(async (req) => {
       success: true,
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      message: 'First Principles API 运行正常',
+      message: 'First Principles API is running normally',
       version: '1.0.0',
       environment: 'development',
       endpoints: {
@@ -53,7 +53,7 @@ serve(async (req) => {
       status: 'error',
       timestamp: new Date().toISOString(),
       error: error.message,
-      message: '服务暂时不可用',
+      message: 'Service is temporarily unavailable',
     }
 
     return new Response(

@@ -44,6 +44,28 @@
     }
   }
 
+  async function getFreshSession() {
+    const currentSession = await getCurrentSession();
+    if (!currentSession?.user) {
+      return null;
+    }
+
+    if (!supabaseClient.auth.refreshSession) {
+      return currentSession;
+    }
+
+    try {
+      const { data, error } = await supabaseClient.auth.refreshSession();
+      if (!error && data.session?.access_token) {
+        return data.session;
+      }
+    } catch (error) {
+      // Fall back to the current session if refresh is temporarily unavailable.
+    }
+
+    return currentSession;
+  }
+
   function onAuthStateChange(callback) {
     return supabaseClient.auth.onAuthStateChange((event, session) => {
       callback(event, session?.user || null);
@@ -93,7 +115,7 @@
       if (error) throw error;
     } catch (error) {
       console.error('Google sign-in failed:', error);
-      alert('登录失败，请重试');
+      alert('Sign-in failed. Please try again.');
     }
   }
 
@@ -132,7 +154,7 @@
       window.location.href = '/';
     } catch (error) {
       console.error('Sign out failed:', error);
-      alert('退出失败，请重试');
+      alert('Sign-out failed. Please try again.');
     }
   }
 
@@ -170,8 +192,8 @@
     const freeSessions = data.freeSessionsRemaining || 0;
     const credits = data.credits || 0;
     creditsDisplay.textContent = freeSessions > 0
-      ? `免费 ${freeSessions} 次 · ${credits} 积分`
-      : `${credits} 积分`;
+      ? `${freeSessions} free sessions · ${credits} credits`
+      : `${credits} credits`;
   }
 
   async function fetchCreditsWithSession(session) {
@@ -194,7 +216,7 @@
     }
 
     creditsRequestInFlight = (async () => {
-      let session = await getCurrentSession();
+      let session = await getFreshSession();
       if (!session?.user) return;
 
       try {
@@ -238,7 +260,7 @@
 
     onAuthStateChange((event, user) => {
       updateUserUI(user);
-      if (user) displayUserCredits();
+      if (user && event !== 'INITIAL_SESSION') displayUserCredits();
     });
 
     const user = await getCurrentUser();
