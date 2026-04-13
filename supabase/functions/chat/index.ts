@@ -595,7 +595,7 @@ async function callDeepSeekAPI(params: {
         provider: 'deepseek',
         model: 'deepseek-chat',
         simplified_architecture: true,
-        detected_language: detectLanguage(lastUserMessage),
+        input_language: 'english',
       },
     }
 
