@@ -1546,6 +1546,7 @@ async function sendMessage() {
       setSessionHeader(shortTitle, parsed?.phase === 5 ? 'Completed session' : `Continue from Phase ${parsed?.phase || currentPhase}`);
     }
 
+    await window.refreshUserCredits?.();
     await refreshConversationList();
   } catch (error) {
     hideTyping();
