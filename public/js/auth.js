@@ -252,6 +252,7 @@
   window.signOut = signOut;
   window.getCurrentUser = getCurrentUser;
   window.getCurrentSession = getCurrentSession;
+  window.getFreshSession = getFreshSession;
   window.onAuthStateChange = onAuthStateChange;
   window.refreshUserCredits = displayUserCredits;
 
