@@ -4,6 +4,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
+const adminSupabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+)
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -37,21 +42,18 @@ interface ChatResponse {
 
 const MAX_SESSION_USER_TURNS = 15
 
-function createRequestSupabaseClient(req: Request) {
+function extractAccessToken(req: Request) {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
     return null
   }
 
-  return createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    }
-  )
+  const [scheme, token] = authHeader.split(' ')
+  if (scheme !== 'Bearer' || !token) {
+    return null
+  }
+
+  return token
 }
 
 // 简化的第一性原理 skill 系统
@@ -188,8 +190,8 @@ serve(async (req) => {
   }
 
   try {
-    const requestSupabase = createRequestSupabaseClient(req)
-    if (!requestSupabase) {
+    const accessToken = extractAccessToken(req)
+    if (!accessToken) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -202,7 +204,7 @@ serve(async (req) => {
       )
     }
 
-    const { data: { user }, error: userError } = await requestSupabase.auth.getUser()
+    const { data: { user }, error: userError } = await adminSupabase.auth.getUser(accessToken)
     if (userError || !user) {
       return new Response(
         JSON.stringify({
@@ -267,7 +269,7 @@ serve(async (req) => {
     }
 
     if (!conversationId) {
-      const { data: sessionStart, error: sessionError } = await supabaseClient.rpc('start_conversation_session', {
+      const { data: sessionStart, error: sessionError } = await adminSupabase.rpc('start_conversation_session', {
         user_id: user.id,
       })
 
