@@ -825,7 +825,14 @@ async function ensureReadyToSend() {
     renderBillingNotice('Your login session could not be verified for a balance check. Please refresh once and try again. If you are out of credits, the server will still block new sessions safely.', {
       tone: 'error',
     });
-    return { allowed: true, session, credits: null };
+    return { allowed: false, reason: 'unauthorized', session, credits: null };
+  }
+
+  if (!session?.access_token) {
+    renderBillingNotice('Your sign-in session is still being refreshed. Please wait a moment and try again.', {
+      tone: 'error',
+    });
+    return { allowed: false, reason: 'session', session, credits: null };
   }
 
   if (!isNewConversation) {
@@ -864,13 +871,22 @@ async function ensureReadyToSend() {
 }
 
 // ==================== API 调用 ====================
-async function callSupabaseChat(messages, userId = 'local-user') {
+async function callSupabaseChat(messages, userId = 'local-user', authSession = null) {
   let authToken = CHAT_SUPABASE_ANON_KEY;
   let resolvedUserId = userId;
 
+  if (authSession?.access_token) {
+    authToken = authSession.access_token;
+    resolvedUserId = authSession.user?.id || userId;
+  }
+
   if (window.supabaseClient) {
     try {
-      let session = await getCurrentSessionSafe();
+      let session = authSession;
+      if (!session?.access_token) {
+        session = await getCurrentSessionSafe();
+      }
+
       if (!session?.access_token && window.supabaseClient.auth.refreshSession) {
         const { data, error } = await window.supabaseClient.auth.refreshSession();
         if (!error && data.session?.user) {
@@ -1194,40 +1210,35 @@ async function sendMessage() {
 
   if (!content) return;
 
+  let authSession = null;
+
   try {
     const access = await ensureReadyToSend();
     if (!access.allowed) {
       return;
     }
-  } catch (error) {
-    console.error('Failed to validate access before sending:', error);
-    renderBillingNotice('We could not pre-check your balance. You can try sending again, and the server will still enforce access rules.', {
-      tone: 'error',
-    });
-  }
 
-  userInput.value = '';
-  userInput.style.height = 'auto';
+    authSession = access.session;
+    userInput.value = '';
+    userInput.style.height = 'auto';
 
-  const emptyState = chatMessages.querySelector('.empty-state');
-  if (emptyState) emptyState.remove();
+    const emptyState = chatMessages.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
 
-  // 添加用户消息
-  messages.push({ role: 'user', content });
-  addMessageToUI('user', content);
+    // 添加用户消息
+    messages.push({ role: 'user', content });
+    addMessageToUI('user', content);
 
-  // 移除之前的 AI 气泡（如果有）
-  const oldBubble = document.getElementById('currentAiBubble');
-  if (oldBubble) {
-    oldBubble.closest('.msg-group')?.remove();
-  }
+    // 移除之前的 AI 气泡（如果有）
+    const oldBubble = document.getElementById('currentAiBubble');
+    if (oldBubble) {
+      oldBubble.closest('.msg-group')?.remove();
+    }
 
-  sendBtn.disabled = true;
-  showTyping();
+    sendBtn.disabled = true;
+    showTyping();
 
-  try {
-    const response = await callSupabaseChat(messages);
-
+    const response = await callSupabaseChat(messages, 'local-user', authSession);
     hideTyping();
 
     // 移除临时气泡的 ID（但保留消息本身）
@@ -1268,8 +1279,6 @@ async function sendMessage() {
           tone: 'default',
         });
       }
-      
-      // 注意：不调用 addMessageToUI，因为内容已经在流式响应中显示了
     }
 
     if (response.conversationId) {
@@ -1278,6 +1287,14 @@ async function sendMessage() {
   } catch (error) {
     hideTyping();
     console.error('Failed to send message:', error);
+
+    if (!authSession) {
+      renderBillingNotice('We could not confirm your sign-in session. Please refresh once and try again.', {
+        tone: 'error',
+      });
+      return;
+    }
+
     if (error.status === 401) {
       addMessageToUI('assistant', 'Please sign in before starting a new thinking session.');
       window.openAuthModal?.();
