@@ -60,13 +60,20 @@ function closePayPalModal() {
 }
 
 async function requireAuthenticatedSession() {
-  const session = window.getCurrentSession
+  let session = window.getCurrentSession
     ? await window.getCurrentSession()
     : (await window.supabaseClient?.auth.getSession())?.data?.session
 
   if (!session?.user) {
     window.openAuthModal?.()
     throw new Error('Please sign in first to purchase credits.')
+  }
+
+  if (window.supabaseClient?.auth?.refreshSession) {
+    const { data, error } = await window.supabaseClient.auth.refreshSession()
+    if (!error && data.session?.access_token) {
+      session = data.session
+    }
   }
 
   return session
@@ -96,17 +103,28 @@ function loadPayPalSDK() {
 }
 
 async function createPayPalOrder(plan, accessToken) {
-  const response = await fetch(`${PAYPAL_FUNCTION_URL}/create-order`, {
+  const sendRequest = async (token) => fetch(`${PAYPAL_FUNCTION_URL}/create-order`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': window.APP_SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({ plan }),
   })
 
-  const data = await response.json().catch(() => ({}))
+  let response = await sendRequest(accessToken)
+  let data = await response.json().catch(() => ({}))
+
+  if (response.status === 401 && window.supabaseClient?.auth?.refreshSession) {
+    const { data: refreshed, error } = await window.supabaseClient.auth.refreshSession()
+    const refreshedToken = refreshed.session?.access_token
+    if (!error && refreshedToken) {
+      response = await sendRequest(refreshedToken)
+      data = await response.json().catch(() => ({}))
+    }
+  }
+
   if (!response.ok) {
     const errorMessage = data.error || data.message || data.details || `Failed to create PayPal order (${response.status})`
     console.error('PayPal create-order failed:', {
@@ -122,17 +140,28 @@ async function createPayPalOrder(plan, accessToken) {
 }
 
 async function capturePayPalOrder(orderId, accessToken) {
-  const response = await fetch(`${PAYPAL_FUNCTION_URL}/capture-order`, {
+  const sendRequest = async (token) => fetch(`${PAYPAL_FUNCTION_URL}/capture-order`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': window.APP_SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({ orderId }),
   })
 
-  const data = await response.json().catch(() => ({}))
+  let response = await sendRequest(accessToken)
+  let data = await response.json().catch(() => ({}))
+
+  if (response.status === 401 && window.supabaseClient?.auth?.refreshSession) {
+    const { data: refreshed, error } = await window.supabaseClient.auth.refreshSession()
+    const refreshedToken = refreshed.session?.access_token
+    if (!error && refreshedToken) {
+      response = await sendRequest(refreshedToken)
+      data = await response.json().catch(() => ({}))
+    }
+  }
+
   if (!response.ok) {
     const errorMessage = data.error || data.message || data.details || `Failed to capture PayPal order (${response.status})`
     console.error('PayPal capture-order failed:', {
