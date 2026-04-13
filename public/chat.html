@@ -903,7 +903,7 @@ function renderBillingNotice(message, options = {}) {
 
   if (options.showPricingLink) {
     const link = document.createElement('a');
-    link.href = '/pricing.html';
+    link.href = '/pricing';
     link.className = 'billing-link-btn';
     link.textContent = 'Recharge now';
     billingNoticeActions.appendChild(link);
@@ -1632,7 +1632,7 @@ function createNewConversation() {
     </div>
   `;
 
-  window.history.replaceState({}, '', '/chat.html');
+  window.history.replaceState({}, '', '/chat');
   refreshConversationList();
 }
 
@@ -1770,7 +1770,7 @@ window.closeRechargeModal = closeRechargeModal;
     </div>
 
     <div class="auth-buttons">
-      <a href="/pricing.html" class="auth-btn-full google-btn" style="text-decoration:none;">Go to pricing</a>
+      <a href="/pricing" class="auth-btn-full google-btn" style="text-decoration:none;">Go to pricing</a>
       <button class="auth-btn-full" onclick="closeRechargeModal()" style="background:rgba(255,255,255,0.06);color:#E8E6DF;">Maybe later</button>
     </div>
 

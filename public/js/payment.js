@@ -96,7 +96,7 @@ async function handlePayment(plan) {
   
   if (!user) {
     alert('Please sign in first to purchase credits')
-    window.location.href = '/chat.html#signin'
+    window.location.href = '/chat#signin'
     return
   }
 
@@ -117,7 +117,7 @@ async function handlePayment(plan) {
     const { error } = await stripeInstance.confirmPayment({
       clientSecret,
       confirmParams: {
-        return_url: `${window.location.origin}/pricing.html?success=true&order=${orderId}`,
+        return_url: `${window.location.origin}/pricing?success=true&order=${orderId}`,
       },
     })
 
@@ -151,7 +151,7 @@ function checkPaymentResult() {
     setTimeout(() => {
       alert('🎉 Payment successful! Your credits have been added to your account.')
       // 清除 URL 参数
-      window.history.replaceState({}, '', '/pricing.html')
+      window.history.replaceState({}, '', '/pricing')
     }, 500)
   }
 }

@@ -1,6 +1,2 @@
-/chat /chat.html 200
 /chat/* /chat.html 200
-/history /history.html 200
-/about /about.html 200
-/pricing /pricing.html 200
 /mindmap/* /mindmap.html 200

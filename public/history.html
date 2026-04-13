@@ -58,7 +58,7 @@
     <ul class="nav-links">
       <li><a href="/about">How it works</a></li>
       <li><a href="/pricing">Pricing</a></li>
-      <li><a href="/chat.html" class="nav-cta">Start thinking</a></li>
+      <li><a href="/chat" class="nav-cta">Start thinking</a></li>
     </ul>
     <div id="userMenu" class="user-menu" style="display: none;">
       <div class="user-info">
@@ -141,7 +141,7 @@ async function load(){
   const session=window.getFreshSession?await window.getFreshSession():null;
 
   if(!session?.access_token){
-    list.innerHTML='<div class="empty"><p>🧠</p><p>Sign in to see your saved sessions.</p><a href="/chat.html">Start thinking →</a></div>';
+    list.innerHTML='<div class="empty"><p>🧠</p><p>Sign in to see your saved sessions.</p><a href="/chat">Start thinking →</a></div>';
     return;
   }
 
@@ -155,7 +155,7 @@ async function load(){
     });
     const payload=await r.json();
     const conversations=payload.conversations||[];
-    if(!conversations.length){list.innerHTML='<div class="empty"><p>🧠</p><p>No sessions yet.</p><a href="/chat.html">Start your first session →</a></div>';return;}
+    if(!conversations.length){list.innerHTML='<div class="empty"><p>🧠</p><p>No sessions yet.</p><a href="/chat">Start your first session →</a></div>';return;}
     list.innerHTML=conversations.map(x=>`<a href="/chat/${x.id}" class="conv-item"><h3>${esc(x.title)}</h3><div class="meta">${esc(metaText(x))}</div></a>`).join('');
   }catch{
     list.innerHTML='<div class="empty"><p>Failed to load.</p></div>';

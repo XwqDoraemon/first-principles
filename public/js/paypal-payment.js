@@ -203,7 +203,7 @@ async function renderPayPalButtons(plan, accessToken) {
       if (result.success) {
         closePayPalModal()
         await window.refreshUserCredits?.()
-        window.location.href = '/pricing.html?paypal=success'
+        window.location.href = '/pricing?paypal=success'
       }
     },
     onCancel: () => {
@@ -241,7 +241,7 @@ function checkPayPalPaymentResult() {
     setTimeout(async () => {
       await window.refreshUserCredits?.()
       alert('Payment successful. Your credits have been added to your account.')
-      window.history.replaceState({}, '', '/pricing.html')
+      window.history.replaceState({}, '', '/pricing')
     }, 300)
   }
 }

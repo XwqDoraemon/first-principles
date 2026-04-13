@@ -554,7 +554,7 @@
     <ul class="nav-links">
       <li><a href="/about">How it works</a></li>
       <li><a href="/pricing">Pricing</a></li>
-      <li><a href="/chat.html" class="nav-cta">Start thinking</a></li>
+      <li><a href="/chat" class="nav-cta">Start thinking</a></li>
     </ul>
     <div id="userMenu" class="user-menu" style="display: none;">
       <div class="user-info">
@@ -705,7 +705,7 @@
 <script src="/js/auth.js"></script>
 <script>
 function startSession(prompt = '') {
-  const targetUrl = new URL('/chat.html', window.location.origin);
+  const targetUrl = new URL('/chat', window.location.origin);
   if (prompt) {
     targetUrl.searchParams.set('prompt', prompt);
   }
