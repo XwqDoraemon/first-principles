@@ -16,6 +16,7 @@
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
+          storageKey: 'first-principles-auth',
         },
       }
     );
@@ -25,22 +26,42 @@
   window.APP_SUPABASE_URL = AUTH_SUPABASE_URL;
   window.APP_SUPABASE_ANON_KEY = AUTH_SUPABASE_ANON_KEY;
   let creditsRequestInFlight = null;
+  let lastKnownSession = null;
+  let authInitPromise = null;
+
+  function cacheSession(session) {
+    if (session?.user) {
+      lastKnownSession = session;
+    } else if (session === null) {
+      lastKnownSession = null;
+    }
+    return lastKnownSession;
+  }
 
   async function getCurrentUser() {
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      return session?.user || null;
+      if (session?.user) {
+        cacheSession(session);
+        return session.user;
+      }
+
+      return lastKnownSession?.user || null;
     } catch (error) {
-      return null;
+      return lastKnownSession?.user || null;
     }
   }
 
   async function getCurrentSession() {
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      return session || null;
+      if (session?.user) {
+        return cacheSession(session);
+      }
+
+      return lastKnownSession || null;
     } catch (error) {
-      return null;
+      return lastKnownSession || null;
     }
   }
 
@@ -50,6 +71,13 @@
       return null;
     }
 
+    const expiresAt = currentSession.expires_at ? currentSession.expires_at * 1000 : 0;
+    const msUntilExpiry = expiresAt ? expiresAt - Date.now() : Number.POSITIVE_INFINITY;
+
+    if (msUntilExpiry > 60 * 1000) {
+      return currentSession;
+    }
+
     if (!supabaseClient.auth.refreshSession) {
       return currentSession;
     }
@@ -57,7 +85,7 @@
     try {
       const { data, error } = await supabaseClient.auth.refreshSession();
       if (!error && data.session?.access_token) {
-        return data.session;
+        return cacheSession(data.session);
       }
     } catch (error) {
       // Fall back to the current session if refresh is temporarily unavailable.
@@ -68,6 +96,11 @@
 
   function onAuthStateChange(callback) {
     return supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        cacheSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        cacheSession(null);
+      }
       callback(event, session?.user || null);
     });
   }
@@ -88,6 +121,11 @@
       } else {
         const { error } = await supabaseClient.auth.getSession();
         if (error) throw error;
+      }
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session?.user) {
+        cacheSession(session);
       }
 
       window.history.replaceState({}, document.title, url.pathname);
@@ -255,6 +293,12 @@
   window.getFreshSession = getFreshSession;
   window.onAuthStateChange = onAuthStateChange;
   window.refreshUserCredits = displayUserCredits;
+  window.whenAuthReady = async () => {
+    if (!authInitPromise) {
+      authInitPromise = Promise.resolve();
+    }
+    return authInitPromise;
+  };
 
   async function initAuthUI() {
     await restoreSessionFromUrl();
@@ -264,14 +308,20 @@
       if (user && event !== 'INITIAL_SESSION') displayUserCredits();
     });
 
-    const user = await getCurrentUser();
+    const session = await getCurrentSession();
+    const user = session?.user || null;
     updateUserUI(user);
     if (user) displayUserCredits();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAuthUI, { once: true });
+    authInitPromise = new Promise((resolve) => {
+      document.addEventListener('DOMContentLoaded', async () => {
+        await initAuthUI();
+        resolve();
+      }, { once: true });
+    });
   } else {
-    initAuthUI();
+    authInitPromise = initAuthUI();
   }
 })();

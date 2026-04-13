@@ -163,9 +163,13 @@ async function load(){
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  await window.whenAuthReady?.();
   await load();
   if(window.onAuthStateChange){
-    window.onAuthStateChange(async ()=>{ await load(); });
+    window.onAuthStateChange(async (event) => {
+      if (event === 'INITIAL_SESSION') return;
+      await load();
+    });
   }
 });
 </script>
