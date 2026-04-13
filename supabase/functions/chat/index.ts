@@ -56,6 +56,137 @@ function extractAccessToken(req: Request) {
   return token
 }
 
+async function ensureUserRecord(user: { id: string; email?: string | null }) {
+  const { data: existingUser, error: loadError } = await adminSupabase
+    .from('users')
+    .select('id, credits_balance, free_sessions_remaining')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (loadError) {
+    throw new Error(`Failed to load user profile: ${loadError.message}`)
+  }
+
+  if (existingUser) {
+    return {
+      credits_balance: existingUser.credits_balance ?? 0,
+      free_sessions_remaining: existingUser.free_sessions_remaining ?? 0,
+    }
+  }
+
+  const { data: createdUser, error: createError } = await adminSupabase
+    .from('users')
+    .insert({
+      id: user.id,
+      email: user.email ?? `${user.id}@placeholder.local`,
+      credits_balance: 0,
+      free_sessions_remaining: 2,
+    })
+    .select('credits_balance, free_sessions_remaining')
+    .single()
+
+  if (createError) {
+    throw new Error(`Failed to create user profile: ${createError.message}`)
+  }
+
+  return {
+    credits_balance: createdUser.credits_balance ?? 0,
+    free_sessions_remaining: createdUser.free_sessions_remaining ?? 2,
+  }
+}
+
+async function recordCreditTransaction(payload: {
+  userId: string
+  amount: number
+  transactionType: string
+  description: string
+  metadata: Record<string, unknown>
+}) {
+  const { error } = await adminSupabase
+    .from('credit_transactions')
+    .insert({
+      user_id: payload.userId,
+      amount: payload.amount,
+      transaction_type: payload.transactionType,
+      description: payload.description,
+      metadata: payload.metadata,
+    })
+
+  if (error) {
+    console.warn('Failed to record credit transaction:', error)
+  }
+}
+
+async function startConversationSession(user: { id: string; email?: string | null }): Promise<StartConversationResult> {
+  const profile = await ensureUserRecord(user)
+  const currentFree = profile.free_sessions_remaining ?? 0
+  const currentBalance = profile.credits_balance ?? 0
+
+  if (currentFree > 0) {
+    const nextFree = currentFree - 1
+    const { error: updateError } = await adminSupabase
+      .from('users')
+      .update({ free_sessions_remaining: nextFree })
+      .eq('id', user.id)
+
+    if (updateError) {
+      throw new Error(`Failed to update free session count: ${updateError.message}`)
+    }
+
+    await recordCreditTransaction({
+      userId: user.id,
+      amount: 0,
+      transactionType: 'free_trial',
+      description: 'Started a free thinking session',
+      metadata: { charged_credits: 0 },
+    })
+
+    return {
+      allowed: true,
+      charged_credits: 0,
+      remaining_credits: currentBalance,
+      free_sessions_remaining: nextFree,
+      message: 'Started with a free session',
+    }
+  }
+
+  if (currentBalance < 2) {
+    return {
+      allowed: false,
+      charged_credits: 0,
+      remaining_credits: currentBalance,
+      free_sessions_remaining: currentFree,
+      message: 'Not enough credits to start a new session',
+    }
+  }
+
+  const nextBalance = currentBalance - 2
+  const { error: updateError } = await adminSupabase
+    .from('users')
+    .update({ credits_balance: nextBalance })
+    .eq('id', user.id)
+
+  if (updateError) {
+    throw new Error(`Failed to deduct credits: ${updateError.message}`)
+  }
+
+  await recordCreditTransaction({
+    userId: user.id,
+    amount: -2,
+    transactionType: 'session_consumed',
+    description: 'Started a paid thinking session',
+    metadata: { charged_credits: 2 },
+  })
+
+  return {
+    allowed: true,
+    charged_credits: 2,
+    remaining_credits: nextBalance,
+    free_sessions_remaining: currentFree,
+    message: 'Charged 2 credits to start a new session',
+  }
+}
+
 // 简化的第一性原理 skill 系统
 const FIRST_PRINCIPLES_SKILL = `You are "First Principles", an AI thinking guide. You MUST follow the skill instructions below exactly.
 
@@ -269,11 +400,11 @@ serve(async (req) => {
     }
 
     if (!conversationId) {
-      const { data: sessionStart, error: sessionError } = await adminSupabase.rpc('start_conversation_session', {
-        user_id: user.id,
-      })
+      let sessionResult: StartConversationResult
 
-      if (sessionError) {
+      try {
+        sessionResult = await startConversationSession(user)
+      } catch (sessionError) {
         console.error('Failed to start conversation session:', sessionError)
         return new Response(
           JSON.stringify({
@@ -286,10 +417,6 @@ serve(async (req) => {
           }
         )
       }
-
-      const sessionResult = Array.isArray(sessionStart)
-        ? sessionStart[0] as StartConversationResult
-        : sessionStart as StartConversationResult
 
       if (!sessionResult?.allowed) {
         return new Response(
