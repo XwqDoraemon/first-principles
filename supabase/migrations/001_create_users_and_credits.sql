@@ -66,27 +66,58 @@ ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.credit_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 
--- 用户只能访问自己的数据
-CREATE POLICY "Users can view own data" ON public.users
-  FOR SELECT USING (auth.uid() = id);
+-- 用户只能访问自己的数据 (保持幂等，避免重复创建导致迁移失败)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'users' AND policyname = 'Users can view own data'
+  ) THEN
+    CREATE POLICY "Users can view own data" ON public.users
+      FOR SELECT USING (auth.uid() = id);
+  END IF;
 
-CREATE POLICY "Users can update own data" ON public.users
-  FOR UPDATE USING (auth.uid() = id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'users' AND policyname = 'Users can update own data'
+  ) THEN
+    CREATE POLICY "Users can update own data" ON public.users
+      FOR UPDATE USING (auth.uid() = id);
+  END IF;
 
-CREATE POLICY "Users can view own conversations" ON public.conversations
-  FOR SELECT USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'conversations' AND policyname = 'Users can view own conversations'
+  ) THEN
+    CREATE POLICY "Users can view own conversations" ON public.conversations
+      FOR SELECT USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can insert own conversations" ON public.conversations
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'conversations' AND policyname = 'Users can insert own conversations'
+  ) THEN
+    CREATE POLICY "Users can insert own conversations" ON public.conversations
+      FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can update own conversations" ON public.conversations
-  FOR UPDATE USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'conversations' AND policyname = 'Users can update own conversations'
+  ) THEN
+    CREATE POLICY "Users can update own conversations" ON public.conversations
+      FOR UPDATE USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can view own transactions" ON public.credit_transactions
-  FOR SELECT USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'credit_transactions' AND policyname = 'Users can view own transactions'
+  ) THEN
+    CREATE POLICY "Users can view own transactions" ON public.credit_transactions
+      FOR SELECT USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can view own orders" ON public.orders
-  FOR SELECT USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'orders' AND policyname = 'Users can view own orders'
+  ) THEN
+    CREATE POLICY "Users can view own orders" ON public.orders
+      FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- 自动更新 updated_at 的触发器
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -97,13 +128,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_users_updated_at
-  BEFORE UPDATE ON public.users
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_users_updated_at'
+  ) THEN
+    CREATE TRIGGER update_users_updated_at
+      BEFORE UPDATE ON public.users
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
 
-CREATE TRIGGER update_conversations_updated_at
-  BEFORE UPDATE ON public.conversations
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_conversations_updated_at'
+  ) THEN
+    CREATE TRIGGER update_conversations_updated_at
+      BEFORE UPDATE ON public.conversations
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- 新用户注册时自动创建用户记录
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -115,9 +157,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created'
+  ) THEN
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END $$;
 
 -- 检查并扣除积分的函数
 CREATE OR REPLACE FUNCTION public.consume_session_credit(user_id UUID)
@@ -175,6 +224,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.get_user_credits(user_id UUID)
 RETURNS INTEGER AS $$
 BEGIN
-  RETURN SELECT credits_balance FROM public.users WHERE id = user_id;
+  RETURN (SELECT credits_balance FROM public.users WHERE id = user_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
