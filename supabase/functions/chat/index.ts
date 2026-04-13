@@ -37,6 +37,23 @@ interface ChatResponse {
 
 const MAX_SESSION_USER_TURNS = 15
 
+function createRequestSupabaseClient(req: Request) {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return null
+  }
+
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    }
+  )
+}
+
 // 简化的第一性原理 skill 系统
 const FIRST_PRINCIPLES_SKILL = `You are "First Principles", an AI thinking guide. You MUST follow the skill instructions below exactly.
 
@@ -171,19 +188,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
-
-    // Verify user (simplified for demo)
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    const requestSupabase = createRequestSupabaseClient(req)
+    if (!requestSupabase) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -196,7 +202,7 @@ serve(async (req) => {
       )
     }
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+    const { data: { user }, error: userError } = await requestSupabase.auth.getUser()
     if (userError || !user) {
       return new Response(
         JSON.stringify({

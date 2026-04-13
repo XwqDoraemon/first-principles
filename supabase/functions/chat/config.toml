@@ -1,0 +1,3 @@
+# Function config - let the function validate auth internally
+[verify_jwt]
+enabled = false
