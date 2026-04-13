@@ -208,6 +208,7 @@ Rules:
 - "phase" must be a number (1-5): 1=Understand, 2=Challenge, 3=Rebuild, 4=Decide, 5=Act
 - "reply" must be a string containing your actual response text
 - When "phase" is 5, you MUST include a "summary" object
+- The "phase" value must always match the stage explicitly described in your reply text
 - "thinking_traps" must be an array of 2-4 concise strings
 - "next_actions" must be an array of 3 concise, concrete steps
 - Do NOT wrap the JSON in backticks
@@ -299,6 +300,7 @@ Goal: Define clear next steps.
   - clarity
   - next_actions
   - takeaway
+- Your phase 5 reply should contain the full written wrap-up, not only an introduction to the summary
 
 ## Important: Include These Elements in Your Responses
 

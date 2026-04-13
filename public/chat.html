@@ -450,6 +450,37 @@ function normalizeSummary(summary) {
   };
 }
 
+function buildFallbackSummary(replyText) {
+  const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user')?.content || 'Your current question';
+  const trimmedReply = String(replyText || '').trim();
+  const takeaway = trimmedReply.split('\n').map(line => line.trim()).filter(Boolean).slice(-1)[0] || 'Clarity comes from turning reflection into action.';
+
+  return {
+    core_problem: lastUserMessage,
+    thinking_traps: [
+      'You may be mixing practical planning with emotional uncertainty.',
+      'You may be looking for complete certainty before taking the next step.',
+    ],
+    primary_tension: 'The tension between wanting clarity and wanting safety before acting.',
+    secondary_tension: 'The tension between reflection and momentum.',
+    clarity: trimmedReply || 'The conversation clarified the next step and reduced ambiguity.',
+    next_actions: [
+      'Write down the single decision or question you are actually trying to resolve.',
+      'Turn that insight into one concrete next step you can take this week.',
+      'Revisit the result after acting instead of waiting for perfect certainty first.',
+    ],
+    takeaway,
+  };
+}
+
+function getSynchronizedPhase(text, explicitPhase = null) {
+  const inferredPhase = text ? detectPhaseFromText(text) : currentPhase;
+  if (typeof explicitPhase === 'number') {
+    return Math.max(explicitPhase, inferredPhase, currentPhase);
+  }
+  return Math.max(inferredPhase, currentPhase);
+}
+
 function removeExistingSummaryCard() {
   document.getElementById('sessionSummaryCard')?.remove();
 }
@@ -930,7 +961,7 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
   const decoder = new TextDecoder();
   let fullContent = '';
   let conversationId = null;
-  let currentPhase = 1;
+  let streamedPhase = currentPhase;
 
   try {
     while (true) {
@@ -957,9 +988,10 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
             // 处理阶段信息
             if (parsed.phase && typeof parsed.phase === 'number') {
               console.log('📍 Phase in SSE:', parsed.phase);
-              if (parsed.phase !== currentPhase) {
-                currentPhase = parsed.phase;
-                updateStepper(currentPhase);
+              const nextPhase = getSynchronizedPhase('', parsed.phase);
+              if (nextPhase !== streamedPhase) {
+                streamedPhase = nextPhase;
+                updateStepper(streamedPhase);
               }
             }
 
@@ -975,9 +1007,10 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
                   console.log('📝 Double JSON detected, extracting content');
                   
                   // 更新阶段
-                  if (innerParsed.phase !== currentPhase) {
-                    currentPhase = innerParsed.phase;
-                    updateStepper(currentPhase);
+                  const nextPhase = getSynchronizedPhase(fullContent, innerParsed.phase);
+                  if (nextPhase !== streamedPhase) {
+                    streamedPhase = nextPhase;
+                    updateStepper(streamedPhase);
                   }
                 } else {
                   // content 是纯文本
@@ -986,6 +1019,12 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
               } catch (e) {
                 // content 不是 JSON，当作纯文本
                 fullContent += chunkContent;
+              }
+
+              const inferredStreamPhase = getSynchronizedPhase(fullContent);
+              if (inferredStreamPhase !== streamedPhase) {
+                streamedPhase = inferredStreamPhase;
+                updateStepper(streamedPhase);
               }
               
               updateAIMessage(fullContent);
@@ -1022,8 +1061,8 @@ function parseAIResponse(text) {
         console.log('✅ Direct JSON parsed:', { phase: parsed.phase, contentLength: parsed.reply.length });
         return {
           content: parsed.reply,
-          phase: parsed.phase,
-          summary: normalizeSummary(parsed.summary)
+          phase: getSynchronizedPhase(parsed.reply, parsed.phase),
+          summary: normalizeSummary(parsed.summary) || (parsed.phase === 5 ? buildFallbackSummary(parsed.reply) : null)
         };
       } else {
         console.warn('⚠️  JSON parsed but missing fields:', Object.keys(parsed));
@@ -1043,8 +1082,8 @@ function parseAIResponse(text) {
         console.log('✅ Double JSON parsed:', { phase: innerParsed.phase, contentLength: innerParsed.reply.length });
         return {
           content: innerParsed.reply,
-          phase: innerParsed.phase,
-          summary: normalizeSummary(innerParsed.summary)
+          phase: getSynchronizedPhase(innerParsed.reply, innerParsed.phase),
+          summary: normalizeSummary(innerParsed.summary) || (innerParsed.phase === 5 ? buildFallbackSummary(innerParsed.reply) : null)
         };
       }
     }
@@ -1062,8 +1101,8 @@ function parseAIResponse(text) {
         console.log('✅ Extracted JSON parsed:', { phase: parsed.phase, contentLength: parsed.reply.length });
         return {
           content: parsed.reply,
-          phase: parsed.phase,
-          summary: normalizeSummary(parsed.summary)
+          phase: getSynchronizedPhase(parsed.reply, parsed.phase),
+          summary: normalizeSummary(parsed.summary) || (parsed.phase === 5 ? buildFallbackSummary(parsed.reply) : null)
         };
       }
     }
@@ -1075,8 +1114,8 @@ function parseAIResponse(text) {
   console.log('⚠️  Treating as plain text, length:', text.length);
   return {
     content: cleanedText,
-    phase: null,
-    summary: null
+    phase: getSynchronizedPhase(cleanedText),
+    summary: currentPhase === 5 ? buildFallbackSummary(cleanedText) : null
   };
 }
 
