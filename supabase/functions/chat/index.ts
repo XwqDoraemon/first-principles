@@ -445,6 +445,20 @@ serve(async (req) => {
       assistantMessageCount,
     })
 
+    if (!aiResponse.success) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: aiResponse.error || 'AI service temporarily unavailable',
+          details: aiResponse.data || null,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 502,
+        }
+      )
+    }
+
     // Return SSE stream
     const stream = new ReadableStream({
       async start(controller) {
@@ -486,7 +500,7 @@ serve(async (req) => {
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
       },
-      status: aiResponse.success ? 200 : 500,
+      status: 200,
     })
 
   } catch (error) {
@@ -562,7 +576,7 @@ async function callDeepSeekAPI(params: {
         messages: apiMessages,
         temperature: 0.7,
         max_tokens: 2000,
-        stream: true,  // 启用 SSE 流式响应
+        stream: false,
       }),
     })
 
@@ -571,39 +585,8 @@ async function callDeepSeekAPI(params: {
       throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`)
     }
 
-    // 读取流式响应
-    const reader = response.body?.getReader()
-    if (!reader) {
-      throw new Error('No response body')
-    }
-
-    const decoder = new TextDecoder()
-    let fullContent = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const chunk = decoder.decode(value)
-      const lines = chunk.split('\n')
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim()
-          if (data === '[DONE]') break
-
-          try {
-            const parsed = JSON.parse(data)
-            const content = parsed.choices?.[0]?.delta?.content
-            if (content) {
-              fullContent += content
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-      }
-    }
+    const payload = await response.json()
+    const fullContent = payload.choices?.[0]?.message?.content?.trim()
 
     return {
       success: true,
