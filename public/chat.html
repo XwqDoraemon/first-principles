@@ -962,6 +962,8 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
   let fullContent = '';
   let conversationId = null;
   let streamedPhase = currentPhase;
+  let explicitPhase = null;
+  let streamedSummary = null;
 
   try {
     while (true) {
@@ -989,10 +991,15 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
             if (parsed.phase && typeof parsed.phase === 'number') {
               console.log('📍 Phase in SSE:', parsed.phase);
               const nextPhase = getSynchronizedPhase('', parsed.phase);
+              explicitPhase = nextPhase;
               if (nextPhase !== streamedPhase) {
                 streamedPhase = nextPhase;
                 updateStepper(streamedPhase);
               }
+            }
+
+            if (parsed.summary) {
+              streamedSummary = normalizeSummary(parsed.summary) || streamedSummary;
             }
 
             // 处理内容 - 可能是双重 JSON
@@ -1005,9 +1012,14 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
                   // 双重 JSON: content 字段包含 JSON 字符串
                   fullContent += innerParsed.reply;
                   console.log('📝 Double JSON detected, extracting content');
+
+                  if (innerParsed.summary) {
+                    streamedSummary = normalizeSummary(innerParsed.summary) || streamedSummary;
+                  }
                   
                   // 更新阶段
                   const nextPhase = getSynchronizedPhase(fullContent, innerParsed.phase);
+                  explicitPhase = nextPhase;
                   if (nextPhase !== streamedPhase) {
                     streamedPhase = nextPhase;
                     updateStepper(streamedPhase);
@@ -1041,7 +1053,9 @@ async function callSupabaseChat(messages, userId = 'local-user', authSession = n
 
   return {
     content: fullContent,
-    conversationId: conversationId
+    conversationId: conversationId,
+    phase: explicitPhase,
+    summary: streamedSummary
   };
 }
 
@@ -1293,8 +1307,18 @@ async function sendMessage() {
     // 3. 不要再次添加到 UI（避免重复显示）
 
     if (response.content) {
-      // 尝试解析 JSON 格式以提取阶段
-      const parsed = parseAIResponse(response.content);
+      const parsedFromStream = {
+        content: response.content,
+        phase: response.phase,
+        summary: response.summary
+      };
+
+      const parsedFallback = parseAIResponse(response.content);
+      const parsed = {
+        content: parsedFromStream.content || parsedFallback.content,
+        phase: parsedFromStream.phase || parsedFallback.phase,
+        summary: parsedFromStream.summary || parsedFallback.summary
+      };
       
       // 使用纯文本内容（去掉可能的 JSON 包装）
       const finalContent = parsed.content || response.content;
@@ -1362,6 +1386,14 @@ async function sendMessage() {
       addMessageToUI('assistant', 'This thinking session is already complete. Start a new session on the left if you want to explore a different question.');
       renderBillingNotice('This session is complete. Start a new one to keep going.', {
         tone: 'default',
+      });
+      return;
+    }
+
+    if (error.status === 503) {
+      addMessageToUI('assistant', error.message || 'The reply was prepared, but billing could not be completed. No credits were deducted. Please try again.');
+      renderBillingNotice('Billing could not be completed, and no credits were deducted. Please try again.', {
+        tone: 'error',
       });
       return;
     }
