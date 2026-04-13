@@ -129,17 +129,45 @@ window.closeAuthModal = closeAuthModal;
   <div class="conv-list" id="conv-list"><div style="color:rgba(232,230,223,0.2);font-size:12px;">Loading...</div></div>
 </div>
 <script>
+const CONVERSATIONS_API_URL = `${window.APP_SUPABASE_URL || 'https://bmstklfbnyevuyxidmhv.supabase.co'}/functions/v1/conversations`;
+const SUPABASE_ANON_KEY = window.APP_SUPABASE_ANON_KEY || 'sb_publishable_wnQx8LZ7qUgVAsVOaEnuVQ_Ede5tM3w';
+
+function fmtDate(iso){if(!iso)return '';const d=new Date(iso);if(Number.isNaN(d.getTime()))return '';return d.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function metaText(item){return `${item.isCompleted ? 'Completed' : `Phase ${item.currentPhase || 1}`} · ${item.messageCount || 0} messages · ${fmtDate(item.updatedAt)}`;}
+
 async function load(){
   const list=document.getElementById('conv-list');
+  const session=window.getFreshSession?await window.getFreshSession():null;
+
+  if(!session?.access_token){
+    list.innerHTML='<div class="empty"><p>🧠</p><p>Sign in to see your saved sessions.</p><a href="/chat.html">Start thinking →</a></div>';
+    return;
+  }
+
   try{
-    const r=await fetch('/api/conversations');const c=await r.json();
-    if(!c.length){list.innerHTML='<div class="empty"><p>🧠</p><p>No sessions yet.</p><a href="/chat.html">Start your first session →</a></div>';return;}
-    list.innerHTML=c.map(x=>`<a href="/chat/${x.id}" class="conv-item"><h3>${esc(x.title)}</h3><div class="meta">${x.msg_count} messages · ${fmtDate(x.updated_at)}</div></a>`).join('');
-  }catch{list.innerHTML='<div class="empty"><p>Failed to load.</p></div>';}
+    const r=await fetch(CONVERSATIONS_API_URL,{
+      method:'GET',
+      headers:{
+        'apikey':SUPABASE_ANON_KEY,
+        'Authorization':`Bearer ${session.access_token}`
+      }
+    });
+    const payload=await r.json();
+    const conversations=payload.conversations||[];
+    if(!conversations.length){list.innerHTML='<div class="empty"><p>🧠</p><p>No sessions yet.</p><a href="/chat.html">Start your first session →</a></div>';return;}
+    list.innerHTML=conversations.map(x=>`<a href="/chat/${x.id}" class="conv-item"><h3>${esc(x.title)}</h3><div class="meta">${esc(metaText(x))}</div></a>`).join('');
+  }catch{
+    list.innerHTML='<div class="empty"><p>Failed to load.</p></div>';
+  }
 }
-function fmtDate(iso){if(!iso)return '';const d=new Date(iso+(iso.includes('Z')||iso.includes('+')?'':'Z'));return d.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-load();
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await load();
+  if(window.onAuthStateChange){
+    window.onAuthStateChange(async ()=>{ await load(); });
+  }
+});
 </script>
 </body>
 </html>

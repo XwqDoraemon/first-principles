@@ -399,6 +399,7 @@
 // ==================== 配置 ====================
 const CHAT_SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co';
 const CHAT_SUPABASE_ANON_KEY = 'sb_publishable_wnQx8LZ7qUgVAsVOaEnuVQ_Ede5tM3w';
+const CONVERSATIONS_API_URL = `${CHAT_SUPABASE_URL}/functions/v1/conversations`;
 
 // ==================== 状态管理 ====================
 let currentConversationId = null;
@@ -416,6 +417,9 @@ const phaseText = document.getElementById('phaseText');
 const billingNotice = document.getElementById('billingNotice');
 const billingNoticeText = document.getElementById('billingNoticeText');
 const billingNoticeActions = document.getElementById('billingNoticeActions');
+const historyList = document.getElementById('historyList');
+const sessionTitleEl = document.getElementById('sessionTitle');
+const sessionSubEl = document.getElementById('sessionSub');
 const phaseMeta = {
   1: { name: 'Understand', pill: 'UNDERSTAND' },
   2: { name: 'Challenge', pill: 'CHALLENGE' },
@@ -483,6 +487,191 @@ function getSynchronizedPhase(text, explicitPhase = null) {
 
 function removeExistingSummaryCard() {
   document.getElementById('sessionSummaryCard')?.remove();
+}
+
+function setSessionHeader(title = 'Start thinking', subtitle = 'First-principles thinking framework') {
+  if (sessionTitleEl) {
+    sessionTitleEl.textContent = title;
+  }
+  if (sessionSubEl) {
+    sessionSubEl.textContent = subtitle;
+  }
+}
+
+function formatConversationTimestamp(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function describeConversationStatus(conversation) {
+  if (conversation.isCompleted) {
+    return `Completed · ${formatConversationTimestamp(conversation.updatedAt)}`;
+  }
+
+  return `Phase ${conversation.currentPhase || 1} · ${formatConversationTimestamp(conversation.updatedAt)}`;
+}
+
+function getConversationIdFromPath() {
+  const match = window.location.pathname.match(/^\/chat\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function fetchConversations(session) {
+  if (!session?.access_token) {
+    return [];
+  }
+
+  const response = await fetch(CONVERSATIONS_API_URL, {
+    method: 'GET',
+    headers: {
+      'apikey': CHAT_SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load conversations: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return payload.conversations || [];
+}
+
+async function fetchConversationDetail(conversationId, session) {
+  if (!session?.access_token) {
+    throw new Error('Missing session');
+  }
+
+  const response = await fetch(`${CONVERSATIONS_API_URL}?conversationId=${encodeURIComponent(conversationId)}`, {
+    method: 'GET',
+    headers: {
+      'apikey': CHAT_SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load conversation: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return payload.conversation;
+}
+
+function renderHistoryList(conversations = []) {
+  if (!historyList) return;
+
+  if (!conversations.length) {
+    historyList.innerHTML = `<div class="history-item"><div class="hi-title">No sessions yet</div><div class="hi-meta">Start your first thinking session</div></div>`;
+    return;
+  }
+
+  historyList.innerHTML = conversations.map((conversation) => `
+    <div class="history-item ${conversation.id === currentConversationId ? 'active' : ''}" data-conversation-id="${conversation.id}">
+      <div class="hi-title">${escapeHtml(conversation.title || 'New Thinking Session')}</div>
+      <div class="hi-meta">${escapeHtml(describeConversationStatus(conversation))}</div>
+    </div>
+  `).join('');
+
+  historyList.querySelectorAll('[data-conversation-id]').forEach((item) => {
+    item.addEventListener('click', async () => {
+      const conversationId = item.getAttribute('data-conversation-id');
+      if (!conversationId || conversationId === currentConversationId) return;
+      await loadConversationIntoView(conversationId);
+    });
+  });
+}
+
+async function refreshConversationList() {
+  if (!historyList) return;
+
+  const session = await getCurrentSessionSafe();
+  if (!session?.access_token) {
+    historyList.innerHTML = `<div class="history-item"><div class="hi-title">Sign in to sync sessions</div><div class="hi-meta">Your saved sessions will appear here</div></div>`;
+    return;
+  }
+
+  try {
+    const conversations = await fetchConversations(session);
+    renderHistoryList(conversations);
+  } catch (error) {
+    console.warn('Failed to refresh conversations:', error);
+    historyList.innerHTML = `<div class="history-item"><div class="hi-title">Unable to load sessions</div><div class="hi-meta">Please refresh and try again</div></div>`;
+  }
+}
+
+function renderConversationMessages(conversationMessages = []) {
+  removeExistingSummaryCard();
+  chatMessages.innerHTML = '';
+
+  conversationMessages.forEach((message) => {
+    if (message.role === 'user' || message.role === 'assistant') {
+      addMessageToUI(message.role, message.content);
+    }
+  });
+}
+
+function restoreConversationSummary(conversationMessages = []) {
+  const lastAssistantMessage = [...conversationMessages].reverse().find((message) => message.role === 'assistant');
+  if (!lastAssistantMessage) return;
+
+  const parsed = parseAIResponse(lastAssistantMessage.content);
+  if (parsed.summary) {
+    renderSessionSummary(parsed.summary);
+  }
+}
+
+async function loadConversationIntoView(conversationId) {
+  const session = await getCurrentSessionSafe();
+  if (!session?.access_token) {
+    renderBillingNotice('Please sign in to view your saved sessions.', { tone: 'error' });
+    return;
+  }
+
+  try {
+    const conversation = await fetchConversationDetail(conversationId, session);
+    currentConversationId = conversation.id;
+    messages = conversation.messages || [];
+    currentPhase = conversation.currentPhase || 1;
+
+    renderConversationMessages(messages);
+    restoreConversationSummary(messages);
+    updateStepper(currentPhase);
+    setComposerLocked(Boolean(conversation.isCompleted));
+    clearBillingNotice();
+    setSessionHeader(
+      conversation.title || 'Saved session',
+      conversation.isCompleted ? 'Completed session' : `Continue from Phase ${conversation.currentPhase || 1}`
+    );
+
+    if (!chatMessages.children.length) {
+      chatMessages.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🧠</div>
+          <div class="empty-title">This session has no messages yet</div>
+        </div>
+      `;
+    }
+
+    window.history.replaceState({}, '', `/chat/${conversation.id}`);
+    await refreshConversationList();
+  } catch (error) {
+    console.error('Failed to load conversation:', error);
+    renderBillingNotice('We could not load that session. Please try again.', { tone: 'error' });
+  }
+}
+
+function escapeHtml(value) {
+  const div = document.createElement('div');
+  div.textContent = String(value || '');
+  return div.innerHTML;
 }
 
 function buildSummaryText(summary) {
@@ -891,9 +1080,9 @@ async function ensureReadyToSend() {
   }
 
   if (freeSessions > 0) {
-    renderBillingNotice(`This message will use 1 free session. You still have ${freeSessions} free sessions left.`);
+    renderBillingNotice(`1 free session will be deducted only after the first AI reply is returned successfully. You still have ${freeSessions} free sessions left.`);
   } else {
-    renderBillingNotice(`This message will use 2 credits. You currently have ${creditBalance} credits remaining.`, {
+    renderBillingNotice(`2 credits will be deducted only after the first AI reply is returned successfully. You currently have ${creditBalance} credits remaining.`, {
       showPricingLink: creditBalance <= 2,
     });
   }
@@ -1306,6 +1495,8 @@ async function sendMessage() {
     // 2. 将消息添加到 messages 数组
     // 3. 不要再次添加到 UI（避免重复显示）
 
+    let parsed = null;
+
     if (response.content) {
       const parsedFromStream = {
         content: response.content,
@@ -1314,7 +1505,7 @@ async function sendMessage() {
       };
 
       const parsedFallback = parseAIResponse(response.content);
-      const parsed = {
+      parsed = {
         content: parsedFromStream.content || parsedFallback.content,
         phase: parsedFromStream.phase || parsedFallback.phase,
         summary: parsedFromStream.summary || parsedFallback.summary
@@ -1346,7 +1537,16 @@ async function sendMessage() {
 
     if (response.conversationId) {
       currentConversationId = response.conversationId;
+      window.history.replaceState({}, '', `/chat/${currentConversationId}`);
     }
+
+    if (messages.length > 0) {
+      const derivedTitle = messages.find((message) => message.role === 'user')?.content?.trim() || 'Current session';
+      const shortTitle = derivedTitle.length > 72 ? `${derivedTitle.slice(0, 72).trim()}...` : derivedTitle;
+      setSessionHeader(shortTitle, parsed?.phase === 5 ? 'Completed session' : `Continue from Phase ${parsed?.phase || currentPhase}`);
+    }
+
+    await refreshConversationList();
   } catch (error) {
     hideTyping();
     console.error('Failed to send message:', error);
@@ -1416,12 +1616,12 @@ function createNewConversation() {
   setComposerLocked(false);
   clearBillingNotice();
   closeRechargeModal();
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  sendBtn.disabled = true;
   
   // 更新标题
-  const sessionTitle = document.getElementById('sessionTitle');
-  if (sessionTitle) {
-    sessionTitle.textContent = 'Start thinking';
-  }
+  setSessionHeader('Start thinking', 'First-principles thinking framework');
   
   chatMessages.innerHTML = `
     <div class="empty-state" id="emptyState">
@@ -1430,6 +1630,9 @@ function createNewConversation() {
       <div class="empty-desc" id="emptyDesc">Ask a question or describe a problem. I'll help you think through it using first principles.</div>
     </div>
   `;
+
+  window.history.replaceState({}, '', '/chat.html');
+  refreshConversationList();
 }
 
 // ==================== 事件监听 ====================
@@ -1455,14 +1658,36 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkSupabaseHealth();
   clearBillingNotice();
   updateStepper(1);
+  await refreshConversationList();
+
+  const conversationIdFromPath = getConversationIdFromPath();
+  if (conversationIdFromPath) {
+    await loadConversationIntoView(conversationIdFromPath);
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   const starterPrompt = urlParams.get('prompt');
-  if (starterPrompt) {
+  if (starterPrompt && !conversationIdFromPath) {
     userInput.value = starterPrompt;
     userInput.style.height = 'auto';
     userInput.style.height = `${userInput.scrollHeight}px`;
     sendBtn.disabled = false;
   }
+
+  if (window.onAuthStateChange) {
+    window.onAuthStateChange(async (_event, user) => {
+      if (!user) {
+        createNewConversation();
+        return;
+      }
+      await refreshConversationList();
+      const pendingConversationId = getConversationIdFromPath();
+      if (pendingConversationId) {
+        await loadConversationIntoView(pendingConversationId);
+      }
+    });
+  }
+
   userInput.focus();
   console.log('🚀 First Principles v3.0.0 - Supabase Serverless');
   console.log('📍 Stepper 实时更新已启用');

@@ -58,8 +58,89 @@ interface StructuredAiMessage {
   summary?: StructuredSummary
 }
 
+interface ConversationMessage {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
+
+function hasChargeableFirstReply(response: ChatResponse): boolean {
+  const structured = response.data?.structured_payload as StructuredAiMessage | undefined
+  if (!structured) {
+    return false
+  }
+
+  return Boolean(String(structured.reply || '').trim())
+}
+
 function detectPrimaryLanguage(text: string): 'zh' | 'en' {
   return /[\u4e00-\u9fff]/.test(text) ? 'zh' : 'en'
+}
+
+function buildConversationTitle(messages: ConversationMessage[]): string {
+  const firstUserMessage = messages.find((message) => message.role === 'user')?.content?.trim() || 'New Thinking Session'
+  return firstUserMessage.length > 72
+    ? `${firstUserMessage.slice(0, 72).trim()}...`
+    : firstUserMessage
+}
+
+async function persistConversationState(params: {
+  conversationId?: string
+  userId: string
+  messages: ConversationMessage[]
+  currentPhase: number
+  isCompleted: boolean
+}): Promise<{ id: string; title: string }> {
+  const title = buildConversationTitle(params.messages)
+
+  if (params.conversationId) {
+    const { error } = await adminSupabase
+      .from('conversations')
+      .update({
+        title,
+        messages: params.messages,
+        current_phase: params.currentPhase,
+        is_completed: params.isCompleted,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', params.conversationId)
+      .eq('user_id', params.userId)
+
+    if (error) {
+      throw new Error(`Failed to update conversation: ${error.message}`)
+    }
+
+    return { id: params.conversationId, title }
+  }
+
+  const conversationId = crypto.randomUUID()
+  const { error } = await adminSupabase
+    .from('conversations')
+    .insert({
+      id: conversationId,
+      user_id: params.userId,
+      title,
+      messages: params.messages,
+      current_phase: params.currentPhase,
+      is_completed: params.isCompleted,
+    })
+
+  if (error) {
+    throw new Error(`Failed to create conversation: ${error.message}`)
+  }
+
+  return { id: conversationId, title }
+}
+
+async function deleteConversationState(conversationId: string, userId: string) {
+  const { error } = await adminSupabase
+    .from('conversations')
+    .delete()
+    .eq('id', conversationId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.warn('Failed to delete conversation after billing rollback:', error)
+  }
 }
 
 function stripCodeFences(text: string): string {
@@ -788,13 +869,48 @@ serve(async (req) => {
       )
     }
 
-    if (!conversationId) {
+    const structuredPayload = aiResponse.data?.structured_payload as StructuredAiMessage | undefined
+    let persistedConversation: { id: string; title: string } | null = null
+    let createdConversationInThisRequest = false
+
+    if (structuredPayload?.reply) {
+      try {
+        persistedConversation = await persistConversationState({
+          conversationId,
+          userId: user.id,
+          messages: [
+            ...messages,
+            { role: 'assistant', content: structuredPayload.reply },
+          ],
+          currentPhase: structuredPayload.phase,
+          isCompleted: structuredPayload.phase === 5,
+        })
+        createdConversationInThisRequest = !conversationId
+      } catch (persistError) {
+        console.error('Failed to persist conversation:', persistError)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'The AI reply was generated, but the session could not be saved. Please try again.',
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          }
+        )
+      }
+    }
+
+    if (!conversationId && hasChargeableFirstReply(aiResponse)) {
       let sessionResult: StartConversationResult
 
       try {
         sessionResult = await finalizeConversationSession(user)
       } catch (sessionError) {
         console.error('Failed to finalize conversation billing:', sessionError)
+        if (createdConversationInThisRequest && persistedConversation?.id) {
+          await deleteConversationState(persistedConversation.id, user.id)
+        }
         return new Response(
           JSON.stringify({
             success: false,
@@ -808,6 +924,9 @@ serve(async (req) => {
       }
 
       if (!sessionResult?.allowed) {
+        if (createdConversationInThisRequest && persistedConversation?.id) {
+          await deleteConversationState(persistedConversation.id, user.id)
+        }
         return new Response(
           JSON.stringify({
             success: false,
@@ -826,19 +945,30 @@ serve(async (req) => {
       }
     }
 
+    if (!conversationId && !hasChargeableFirstReply(aiResponse)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'The first AI reply did not contain a valid answer, so no credits were deducted. Please try again.',
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 502,
+        }
+      )
+    }
+
     // Return SSE stream
     const stream = new ReadableStream({
       async start(controller) {
         try {
           // Send conversation ID first
-          const convId = conversationId || `conv-${Date.now()}`
+          const convId = persistedConversation?.id || conversationId || `conv-${Date.now()}`
           controller.enqueue(
             new TextEncoder().encode(
               `data: ${JSON.stringify({ conversationId: convId })}\n\n`
             )
           )
-
-          const structuredPayload = aiResponse.data?.structured_payload as StructuredAiMessage | undefined
 
           // Send message content
           if (aiResponse.success && aiResponse.message) {
