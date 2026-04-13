@@ -20,6 +20,7 @@ const DEFAULT_SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co'
 const PAYPAL_FUNCTION_URL = `${window.APP_SUPABASE_URL || DEFAULT_SUPABASE_URL}/functions/v1/payment-paypal`
 
 let paypalSdkPromise = null
+let lastPayPalErrorMessage = ''
 function getPayPalModalElements() {
   return {
     modal: document.getElementById('paypalCheckoutModal'),
@@ -107,9 +108,16 @@ async function createPayPalOrder(plan, accessToken) {
 
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to create PayPal order')
+    const errorMessage = data.error || data.message || data.details || `Failed to create PayPal order (${response.status})`
+    console.error('PayPal create-order failed:', {
+      status: response.status,
+      body: data,
+    })
+    lastPayPalErrorMessage = errorMessage
+    throw new Error(errorMessage)
   }
 
+  lastPayPalErrorMessage = ''
   return data
 }
 
@@ -126,9 +134,16 @@ async function capturePayPalOrder(orderId, accessToken) {
 
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to capture PayPal order')
+    const errorMessage = data.error || data.message || data.details || `Failed to capture PayPal order (${response.status})`
+    console.error('PayPal capture-order failed:', {
+      status: response.status,
+      body: data,
+    })
+    lastPayPalErrorMessage = errorMessage
+    throw new Error(errorMessage)
   }
 
+  lastPayPalErrorMessage = ''
   return data
 }
 
@@ -167,7 +182,8 @@ async function renderPayPalButtons(plan, accessToken) {
     },
     onError: (error) => {
       console.error('PayPal checkout error:', error)
-      setPayPalStatus('PayPal checkout failed. Please try again.', true)
+      const message = lastPayPalErrorMessage || error?.message || 'PayPal checkout failed. Please try again.'
+      setPayPalStatus(message, true)
     },
   })
 
