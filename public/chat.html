@@ -710,6 +710,13 @@ function clearBillingNotice() {
 }
 
 async function getCurrentSessionSafe() {
+  if (window.getFreshSession) {
+    const session = await window.getFreshSession();
+    if (session?.user && session?.access_token) {
+      return session;
+    }
+  }
+
   if (window.getCurrentSession) {
     const session = await window.getCurrentSession();
     if (session?.user) {
@@ -718,6 +725,17 @@ async function getCurrentSessionSafe() {
   }
 
   if (window.supabaseClient?.auth) {
+    if (window.supabaseClient.auth.refreshSession) {
+      try {
+        const { data, error } = await window.supabaseClient.auth.refreshSession();
+        if (!error && data.session?.user && data.session?.access_token) {
+          return data.session;
+        }
+      } catch (error) {
+        console.warn('Failed to refresh auth session on chat page:', error);
+      }
+    }
+
     const { data: { session } } = await window.supabaseClient.auth.getSession();
     if (session?.user) {
       return session;
@@ -733,19 +751,33 @@ async function getCurrentSessionSafe() {
 }
 
 async function getConversationAccessState() {
-  const session = await getCurrentSessionSafe();
+  let session = await getCurrentSessionSafe();
   if (!session?.user) {
     return { session: null, credits: null };
   }
 
   try {
-    const response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/payment/credits`, {
+    let response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/payment/credits`, {
       method: 'GET',
       headers: {
         'apikey': CHAT_SUPABASE_ANON_KEY,
         ...(session.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
       },
     });
+
+    if (response.status === 401) {
+      const refreshedSession = await getCurrentSessionSafe();
+      if (refreshedSession?.access_token && refreshedSession.access_token !== session.access_token) {
+        session = refreshedSession;
+        response = await fetch(`${CHAT_SUPABASE_URL}/functions/v1/payment/credits`, {
+          method: 'GET',
+          headers: {
+            'apikey': CHAT_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    }
 
     if (response.status === 401) {
       return { session, credits: null, creditsFetchFailed: true, unauthorized: true };
@@ -838,7 +870,14 @@ async function callSupabaseChat(messages, userId = 'local-user') {
 
   if (window.supabaseClient) {
     try {
-      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      let session = await getCurrentSessionSafe();
+      if (!session?.access_token && window.supabaseClient.auth.refreshSession) {
+        const { data, error } = await window.supabaseClient.auth.refreshSession();
+        if (!error && data.session?.user) {
+          session = data.session;
+        }
+      }
+
       if (session?.access_token) {
         authToken = session.access_token;
         resolvedUserId = session.user?.id || userId;
