@@ -397,6 +397,65 @@
   .paypal-status[data-state="error"] {
     color: #f1a4a4;
   }
+  .payment-notice {
+    position: fixed;
+    top: 76px;
+    right: 24px;
+    width: min(420px, calc(100vw - 32px));
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    background: rgba(18, 18, 20, 0.94);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(14px);
+    z-index: 1300;
+    display: none;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .payment-notice.active {
+    display: flex;
+  }
+  .payment-notice[data-state="success"] {
+    border-color: rgba(102, 187, 106, 0.35);
+    background: rgba(18, 28, 20, 0.96);
+  }
+  .payment-notice[data-state="error"] {
+    border-color: rgba(241, 164, 164, 0.32);
+    background: rgba(40, 21, 21, 0.96);
+  }
+  .payment-notice[data-state="info"] {
+    border-color: rgba(184, 169, 138, 0.28);
+  }
+  .payment-notice-copy {
+    flex: 1;
+    min-width: 0;
+  }
+  .payment-notice-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #F0EDE4;
+    margin-bottom: 6px;
+  }
+  .payment-notice-message {
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(232,230,223,0.72);
+  }
+  .payment-notice-close {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(232,230,223,0.75);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .payment-notice-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #F0EDE4;
+  }
   .plan-btn.ghost {
     background: transparent;
     color: rgba(232,230,223,0.6);
@@ -450,6 +509,12 @@
     .nav-links a:not(.nav-cta) {
       display: none;
     }
+    .payment-notice {
+      top: 68px;
+      right: 16px;
+      left: 16px;
+      width: auto;
+    }
   }
 </style>
 </head>
@@ -475,6 +540,14 @@
     </div>
   </div>
 </nav>
+
+<div id="paymentNotice" class="payment-notice" data-state="info" role="status" aria-live="polite">
+  <div class="payment-notice-copy">
+    <div id="paymentNoticeTitle" class="payment-notice-title">Payment update</div>
+    <p id="paymentNoticeMessage" class="payment-notice-message"></p>
+  </div>
+  <button class="payment-notice-close" type="button" onclick="hidePaymentNotice()" aria-label="Dismiss payment notice">&times;</button>
+</div>
 
 <!-- 认证模态框 -->
 <div id="authModal" class="auth-modal">
@@ -529,6 +602,50 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth.js"></script>
 <script>
+let paymentNoticeTimer = null;
+
+function showPaymentNotice(message, state = 'info', options = {}) {
+  const notice = document.getElementById('paymentNotice');
+  const title = document.getElementById('paymentNoticeTitle');
+  const body = document.getElementById('paymentNoticeMessage');
+  if (!notice || !title || !body) return;
+
+  const titleMap = {
+    success: 'Credits added',
+    error: 'Payment issue',
+    info: 'Payment update',
+  };
+
+  if (paymentNoticeTimer) {
+    clearTimeout(paymentNoticeTimer);
+    paymentNoticeTimer = null;
+  }
+
+  notice.dataset.state = state;
+  title.textContent = options.title || titleMap[state] || titleMap.info;
+  body.textContent = message;
+  notice.classList.add('active');
+
+  const duration = options.duration ?? 5200;
+  if (duration > 0) {
+    paymentNoticeTimer = setTimeout(() => {
+      hidePaymentNotice();
+    }, duration);
+  }
+}
+
+function hidePaymentNotice() {
+  const notice = document.getElementById('paymentNotice');
+  if (!notice) return;
+
+  if (paymentNoticeTimer) {
+    clearTimeout(paymentNoticeTimer);
+    paymentNoticeTimer = null;
+  }
+
+  notice.classList.remove('active');
+}
+
 function openAuthModal() {
   document.getElementById('authModal').classList.add('active');
 }
@@ -547,6 +664,8 @@ window.addEventListener('click', function(event) {
 })
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
+window.showPaymentNotice = showPaymentNotice;
+window.hidePaymentNotice = hidePaymentNotice;
 </script>
 
 <div class="pricing-page">

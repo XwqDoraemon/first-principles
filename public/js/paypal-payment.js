@@ -18,9 +18,45 @@ const PAYPAL_CONFIG = {
 
 const DEFAULT_SUPABASE_URL = 'https://bmstklfbnyevuyxidmhv.supabase.co'
 const PAYPAL_FUNCTION_URL = `${window.APP_SUPABASE_URL || DEFAULT_SUPABASE_URL}/functions/v1/payment-paypal`
+const PAYPAL_NOTICE_STORAGE_KEY = 'paypal_payment_notice'
 
 let paypalSdkPromise = null
 let lastPayPalErrorMessage = ''
+
+function showPayPalNotice(message, state = 'info', options = {}) {
+  if (typeof window.showPaymentNotice === 'function') {
+    window.showPaymentNotice(message, state, options)
+    return
+  }
+
+  if (message) {
+    alert(message)
+  }
+}
+
+function persistPayPalNotice(notice) {
+  try {
+    window.sessionStorage?.setItem(PAYPAL_NOTICE_STORAGE_KEY, JSON.stringify(notice))
+  } catch (error) {
+    console.warn('Failed to persist PayPal notice:', error)
+  }
+}
+
+function consumePayPalNotice() {
+  try {
+    const raw = window.sessionStorage?.getItem(PAYPAL_NOTICE_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+
+    window.sessionStorage.removeItem(PAYPAL_NOTICE_STORAGE_KEY)
+    return JSON.parse(raw)
+  } catch (error) {
+    console.warn('Failed to consume PayPal notice:', error)
+    return null
+  }
+}
+
 function getPayPalModalElements() {
   return {
     modal: document.getElementById('paypalCheckoutModal'),
@@ -201,6 +237,11 @@ async function renderPayPalButtons(plan, accessToken) {
       const result = await capturePayPalOrder(data.orderID, accessToken)
 
       if (result.success) {
+        persistPayPalNotice({
+          state: 'success',
+          title: 'Credits added',
+          message: 'Payment successful. Your credits have been added to your account.',
+        })
         closePayPalModal()
         await window.refreshUserCredits?.()
         window.location.href = '/pricing?paypal=success'
@@ -208,11 +249,18 @@ async function renderPayPalButtons(plan, accessToken) {
     },
     onCancel: () => {
       setPayPalStatus('Payment was cancelled. You can try again.')
+      showPayPalNotice('Payment was cancelled. No charge was made.', 'info', {
+        title: 'Checkout cancelled',
+      })
     },
     onError: (error) => {
       console.error('PayPal checkout error:', error)
       const message = lastPayPalErrorMessage || error?.message || 'PayPal checkout failed. Please try again.'
       setPayPalStatus(message, true)
+      showPayPalNotice(message, 'error', {
+        title: 'Payment failed',
+        duration: 7000,
+      })
     },
   })
 
@@ -228,7 +276,10 @@ async function handlePayPalPayment(plan) {
   } catch (error) {
     console.error('Error starting PayPal payment:', error)
     if (error.message) {
-      alert(error.message)
+      showPayPalNotice(error.message, 'error', {
+        title: 'Payment failed',
+        duration: 7000,
+      })
     }
   }
 }
@@ -236,13 +287,28 @@ async function handlePayPalPayment(plan) {
 function checkPayPalPaymentResult() {
   const urlParams = new URLSearchParams(window.location.search)
   const success = urlParams.get('paypal')
+  const storedNotice = consumePayPalNotice()
 
   if (success === 'success') {
     setTimeout(async () => {
       await window.refreshUserCredits?.()
-      alert('Payment successful. Your credits have been added to your account.')
+      const notice = storedNotice || {
+        state: 'success',
+        title: 'Credits added',
+        message: 'Payment successful. Your credits have been added to your account.',
+      }
+      showPayPalNotice(notice.message, notice.state, {
+        title: notice.title,
+      })
       window.history.replaceState({}, '', '/pricing')
     }, 300)
+    return
+  }
+
+  if (storedNotice?.message) {
+    showPayPalNotice(storedNotice.message, storedNotice.state, {
+      title: storedNotice.title,
+    })
   }
 }
 
