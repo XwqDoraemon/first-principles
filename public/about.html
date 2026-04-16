@@ -55,6 +55,14 @@
   .cta a{display:inline-flex;align-items:center;gap:8px;background:#B8A98A;color:#0A0A0B;font-weight:500;padding:14px 32px;border-radius:28px;text-decoration:none;font-size:14px;transition:opacity 0.2s;font-family:'DM Sans',sans-serif;}
   .cta a:hover{opacity:0.82;}
   .divider{border:none;border-top:0.5px solid rgba(255,255,255,0.06);margin:40px 0;}
+  .support-panel{margin-top:40px;background:rgba(255,255,255,0.02);border:0.5px solid rgba(255,255,255,0.08);border-radius:18px;padding:24px;}
+  .support-panel h3{font-family:'Lora',serif;font-size:22px;font-weight:400;color:#F0EDE4;margin-bottom:12px;}
+  .support-panel p{margin-bottom:10px;}
+  .support-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+  .support-list li{font-size:14px;line-height:1.7;color:rgba(232,230,223,0.58);padding-left:18px;position:relative;}
+  .support-list li::before{content:'•';position:absolute;left:0;color:#B8A98A;}
+  .support-link{color:#B8A98A;text-decoration:none;}
+  .support-link:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -133,25 +141,42 @@ window.closeAuthModal = closeAuthModal;
   <div class="hero">
     <div class="emoji">🧠</div>
     <h1>Think from first principles.</h1>
-    <p class="subtitle">AI-guided thinking for life's hard questions.</p>
+    <p class="subtitle">A guided 5-phase thinking session for decisions that actually matter.</p>
   </div>
 
   <h2>What is first principles thinking?</h2>
-  <p>When you face a tough decision, your brain takes shortcuts — it assumes, judges, and generalizes based on past experience. <span class="hl">First principles thinking</span> means stripping away those assumptions and reasoning from the ground up.</p>
-  <p>This approach is used by Elon Musk, Jeff Bezos, and top scientists. It's backed by research in behavioral economics, the Socratic method, and cognitive behavioral therapy.</p>
+  <p>When a decision feels emotionally loaded, most people do not need more generic advice. They need help separating <span class="hl">facts, assumptions, fear, and real priorities</span>.</p>
+  <p><span class="hl">First principles thinking</span> is the process of stripping a problem down to what is actually true, then rebuilding a clearer next step from there. That is what this product is designed to help you do.</p>
 
   <h2>How to use First Principles</h2>
   <div class="steps">
-    <div class="step"><div class="step-num">1</div><div class="step-text"><h3>Type your problem</h3><p>Any question, dilemma, or decision — personal, career, relationship, or business.</p></div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-text"><h3>Answer the AI's questions</h3><p>The AI asks one question at a time — about assumptions, root causes, and possible solutions.</p></div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text"><h3>Get your mind map</h3><p>At the end, you'll receive a visual summary of your entire thinking journey.</p></div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-text"><h3>Bring one real problem</h3><p>Start with a decision, conflict, block, or recurring question you genuinely care about. The better the problem, the more useful the session becomes.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text"><h3>Move through 5 guided phases</h3><p>You are led step by step through understanding, challenging assumptions, rebuilding the problem, deciding, and identifying the next action.</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text"><h3>Leave with clarity, not just conversation</h3><p>At the end, you get a structured summary of the key tensions, thinking traps, and next steps so the session turns into action.</p></div></div>
   </div>
 
   <hr class="divider">
 
-  <h2>Why not just use ChatGPT?</h2>
-  <p>ChatGPT gives you <span class="hl">answers</span>. First Principles gives you a <span class="hl">thinking process</span>.</p>
-  <p>We use a structured 5-phase Socratic framework to guide you step by step. The insight you reach is <em>yours</em> — not borrowed from an AI.</p>
+  <h2>What makes this different?</h2>
+  <p>Most AI tools try to be helpful by answering fast. First Principles is built to be useful by slowing you down in the <span class="hl">right</span> places.</p>
+  <p>Instead of dumping advice, it uses a structured 5-phase Socratic flow to help you notice hidden assumptions, find the real tension underneath the surface, and arrive at an answer that feels earned.</p>
+  <p>The goal is not to impress you with intelligence. The goal is to help you think well enough that you trust your own next move.</p>
+
+  <hr class="divider">
+
+  <h2>Support and refunds</h2>
+  <p>If you have a billing issue, a duplicate charge, or a payment that completed without credits arriving, contact us and we will review it manually.</p>
+  <p>Unused purchased credits are generally eligible for a full refund within 7 days of purchase. If credits have already been used, refunds are usually not available unless there was a clear billing or product issue.</p>
+
+  <div class="support-panel">
+    <h3>How to reach us</h3>
+    <p>Email <a class="support-link" href="mailto:xuewq983@gmail.com">xuewq983@gmail.com</a> for support or refund requests.</p>
+    <ul class="support-list">
+      <li>Include your account email, payment date, amount, and payment method.</li>
+      <li>If possible, add your order ID or a payment screenshot so we can resolve the request faster.</li>
+      <li>If payment succeeded but credits did not appear, mention that in the subject line and we will prioritize the review.</li>
+    </ul>
+  </div>
 
   <div class="cta"><a href="/chat">Start Thinking →</a></div>
 </div>

@@ -492,6 +492,59 @@
     color: rgba(232,230,223,0.4);
     line-height: 1.6;
   }
+  .faq-answer a,
+  .support-link {
+    color: #B8A98A;
+    text-decoration: none;
+  }
+  .faq-answer a:hover,
+  .support-link:hover {
+    text-decoration: underline;
+  }
+  .policy-section {
+    max-width: 700px;
+    margin: 56px auto 0;
+    display: grid;
+    gap: 18px;
+  }
+  .policy-card {
+    background: rgba(255,255,255,0.02);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  .policy-card h3 {
+    font-family: 'Lora', serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: #F0EDE4;
+    margin-bottom: 10px;
+  }
+  .policy-card p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(232,230,223,0.55);
+    margin-bottom: 12px;
+  }
+  .policy-list {
+    list-style: none;
+    display: grid;
+    gap: 10px;
+    margin: 14px 0 0;
+  }
+  .policy-list li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(232,230,223,0.62);
+    padding-left: 18px;
+    position: relative;
+  }
+  .policy-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #B8A98A;
+  }
 
   @media (max-width: 900px) {
     .pricing-cards {
@@ -672,7 +725,7 @@ window.hidePaymentNotice = hidePaymentNotice;
   <div class="pricing-header">
     <div class="pricing-eyebrow">Simple, Transparent Pricing</div>
     <h1 class="pricing-h1">Pay for what you use</h1>
-    <p class="pricing-sub">Start with 2 free sessions. After that, each new session costs 2 credits. Buy credits whenever you need them.</p>
+    <p class="pricing-sub">Start with 2 free sessions. After that, each new guided thinking session costs 2 credits. Buy credits only when you want to keep going.</p>
   </div>
 
   <div class="pricing-cards">
@@ -680,11 +733,11 @@ window.hidePaymentNotice = hidePaymentNotice;
     <div class="pricing-card">
       <div class="plan-name">Free Starter</div>
       <div class="plan-price">$0<span></span></div>
-      <div class="plan-desc">Perfect for trying First Principles</div>
+      <div class="plan-desc">A simple way to try the product on a real question</div>
       <ul class="plan-features">
-        <li>2 free thinking sessions</li>
-        <li>Full access to all 5 phases</li>
-        <li>Shareable mind maps</li>
+        <li>2 free guided sessions</li>
+        <li>Access to the full 5-phase flow</li>
+        <li>Structured end-of-session summary</li>
         <li>No credit card required</li>
       </ul>
       <button class="plan-btn ghost" onclick="startSession()">Start Free</button>
@@ -694,15 +747,13 @@ window.hidePaymentNotice = hidePaymentNotice;
     <div class="pricing-card featured">
       <div class="plan-name">Basic Pack</div>
       <div class="plan-price">$0.99<span></span></div>
-      <div class="plan-desc">5 complete thinking sessions</div>
+      <div class="plan-desc">Good for occasional decisions and short bursts of clarity</div>
       <ul class="plan-features">
         <li>10 credits included</li>
-        <li>2 credits per new session</li>
-        <li>5 thinking sessions</li>
-        <li>Full access to all 5 phases</li>
-        <li>Shareable mind maps</li>
-        <li>Session history saved</li>
-        <li>Priority support</li>
+        <li>Up to 5 new sessions</li>
+        <li>Full 5-phase guided flow</li>
+        <li>Saved session history</li>
+        <li>Structured summaries for completed sessions</li>
       </ul>
       <button class="plan-btn primary" onclick="buyCredits('basic')">Buy $0.99</button>
     </div>
@@ -711,16 +762,13 @@ window.hidePaymentNotice = hidePaymentNotice;
     <div class="pricing-card">
       <div class="plan-name">Pro Pack</div>
       <div class="plan-price">$4.99<span></span></div>
-      <div class="plan-desc">30 complete thinking sessions</div>
+      <div class="plan-desc">For people who want to return to the tool regularly</div>
       <ul class="plan-features">
         <li>60 credits included</li>
-        <li>2 credits per new session</li>
-        <li>30 thinking sessions</li>
-        <li>Full access to all 5 phases</li>
-        <li>Shareable mind maps</li>
-        <li>Unlimited session history</li>
-        <li>Priority support</li>
-        <li>Export to PDF</li>
+        <li>Up to 30 new sessions</li>
+        <li>Full 5-phase guided flow</li>
+        <li>Saved session history</li>
+        <li>Structured summaries for completed sessions</li>
       </ul>
       <button class="plan-btn ghost" onclick="buyCredits('pro')">Buy $4.99</button>
     </div>
@@ -731,7 +779,7 @@ window.hidePaymentNotice = hidePaymentNotice;
     
     <div class="faq-item">
       <div class="faq-question">What counts as a "session"?</div>
-      <div class="faq-answer">One session = one complete thinking exercise from start to finish. A new session costs 2 credits, and you can go through all 5 phases in that single session.</div>
+      <div class="faq-answer">A session starts when you begin a new conversation and the first AI reply is returned successfully. That session can continue through the full 5-phase flow. Starting a new session costs 2 credits.</div>
     </div>
 
     <div class="faq-item">
@@ -740,8 +788,8 @@ window.hidePaymentNotice = hidePaymentNotice;
     </div>
 
     <div class="faq-item">
-      <div class="faq-question">Can I share my sessions?</div>
-      <div class="faq-answer">Yes! Every session generates a shareable mind map that you can send to anyone.</div>
+      <div class="faq-question">What do I get at the end of a session?</div>
+      <div class="faq-answer">Completed sessions include a structured summary of the core problem, key tensions, likely thinking traps, and suggested next steps. The exact output may continue to evolve as the product improves.</div>
     </div>
 
     <div class="faq-item">
@@ -751,7 +799,25 @@ window.hidePaymentNotice = hidePaymentNotice;
 
     <div class="faq-item">
       <div class="faq-question">Is there a refund policy?</div>
-      <div class="faq-answer">Yes, if you're not satisfied with your purchase, contact us within 7 days for a full refund.</div>
+      <div class="faq-answer">Yes. Unused purchased credits are generally eligible for a refund within 7 days of purchase. If credits have already been used, refunds are usually not available unless there was a billing error or a product issue. Email <a href="mailto:xuewq983@gmail.com">xuewq983@gmail.com</a> and include your account email, payment date, amount, and order details.</div>
+    </div>
+  </div>
+
+  <div class="policy-section">
+    <div class="policy-card">
+      <h3>Refund Policy</h3>
+      <p>We want the billing experience to feel clear and low-friction. If something goes wrong, we will review refund requests promptly and fairly.</p>
+      <ul class="policy-list">
+        <li>Unused purchased credits are generally eligible for a full refund within 7 days of purchase.</li>
+        <li>If credits have already been partially or fully used, refunds are usually not available except in cases of duplicate charges, technical failure, or other clear billing mistakes.</li>
+        <li>If payment succeeds but credits do not arrive, contact us first and we will either correct the issue or arrange a refund.</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h3>Billing Support</h3>
+      <p>For billing questions or refund requests, email <a class="support-link" href="mailto:xuewq983@gmail.com">xuewq983@gmail.com</a>.</p>
+      <p>To help us process your request faster, include your account email, payment date, amount, payment method, and any order ID or screenshot you have available.</p>
     </div>
   </div>
 </div>
