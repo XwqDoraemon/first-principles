@@ -1,0 +1,3 @@
+# Let the function validate the Supabase session internally.
+[verify_jwt]
+enabled = false

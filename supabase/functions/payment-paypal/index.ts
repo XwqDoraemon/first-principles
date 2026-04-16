@@ -44,6 +44,7 @@ async function getAuthenticatedUser(req: Request) {
     throw new Error('Missing authorization header')
   }
 
+  // Validate the session inside the function so we are not blocked by gateway JWT settings.
   const requestSupabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
