@@ -1,6 +1,6 @@
 // PayPal payment integration
 const PAYPAL_CONFIG = {
-  clientId: window.PAYPAL_CLIENT_ID || 'AU_ZropTaP02Cbe_FaE1mz2h0TGiNh2G0RadG69OFbpDRDrA4wc19xhY30w61q_egWrWSEDQ6TIOE-dD',
+  clientId: window.PAYPAL_CLIENT_ID || 'AXt_RW1tPquAyhGAL4scYlErkTcqrHTKgFTFPqXUovV5mTRD4wea9VqFk-mP8Lenasl9ktaMy71v5yvC',
   currency: 'USD',
   plans: {
     basic: {
