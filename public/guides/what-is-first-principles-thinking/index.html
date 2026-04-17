@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Is First Principles Thinking? — First Principles</title>
+<meta name="description" content="Learn what first principles thinking is, why it matters in hard decisions, and how to use it in a practical way instead of as an abstract idea.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://firstprinciples.site/guides/what-is-first-principles-thinking/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="First Principles">
+<meta property="og:title" content="What Is First Principles Thinking? — First Principles">
+<meta property="og:description" content="A practical explanation of first principles thinking and how to use it in real decisions.">
+<meta property="og:url" content="https://firstprinciples.site/guides/what-is-first-principles-thinking/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="What Is First Principles Thinking? — First Principles">
+<meta name="twitter:description" content="A practical explanation of first principles thinking and how to use it in real decisions.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "What Is First Principles Thinking?",
+  "description": "A practical explanation of first principles thinking and how to use it in real decisions.",
+  "author": {
+    "@type": "Organization",
+    "name": "First Principles"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "First Principles"
+  },
+  "datePublished": "2026-04-17",
+  "dateModified": "2026-04-17",
+  "mainEntityOfPage": "https://firstprinciples.site/guides/what-is-first-principles-thinking/"
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #0A0A0B; color: #E8E6DF; min-height: 100vh; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 0.5px solid rgba(255,255,255,0.08); background: rgba(10,10,11,0.95); backdrop-filter: blur(12px); height: 56px; }
+  .logo { font-family: 'Lora', serif; font-size: 18px; letter-spacing: -0.3px; color: #F0EDE4; text-decoration: none; }
+  .logo span { color: #B8A98A; font-style: italic; }
+  .nav-links { display: flex; gap: 32px; list-style: none; align-items: center; }
+  .nav-links a { text-decoration: none; color: rgba(232,230,223,0.5); font-size: 13px; transition: color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: #E8E6DF; }
+  .nav-cta { background: #B8A98A; color: #0A0A0B !important; padding: 8px 20px; border-radius: 20px; font-weight: 500; }
+  .page { max-width: 760px; margin: 0 auto; padding: 64px 24px 88px; }
+  .breadcrumb { font-size: 12px; color: rgba(232,230,223,0.34); margin-bottom: 20px; }
+  .breadcrumb a { color: #B8A98A; text-decoration: none; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #B8A98A; margin-bottom: 18px; }
+  h1 { font-family: 'Lora', serif; font-size: 48px; line-height: 1.08; font-weight: 400; letter-spacing: -1.2px; color: #F0EDE4; margin-bottom: 18px; }
+  .lede { font-size: 18px; line-height: 1.8; color: rgba(232,230,223,0.62); margin-bottom: 28px; }
+  .meta { font-size: 12px; color: rgba(232,230,223,0.34); margin-bottom: 38px; }
+  h2 { font-family: 'Lora', serif; font-size: 30px; font-weight: 400; color: #F0EDE4; margin: 42px 0 16px; }
+  p { font-size: 15px; line-height: 1.85; color: rgba(232,230,223,0.58); margin-bottom: 16px; }
+  ul { margin: 10px 0 18px 20px; color: rgba(232,230,223,0.58); }
+  li { margin-bottom: 10px; line-height: 1.8; }
+  .callout { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 24px; margin: 30px 0; }
+  .callout h3 { font-size: 16px; color: #F0EDE4; margin-bottom: 10px; }
+  .related { margin-top: 54px; padding-top: 28px; border-top: 0.5px solid rgba(255,255,255,0.08); }
+  .related h3 { font-family: 'Lora', serif; font-size: 24px; font-weight: 400; margin-bottom: 16px; }
+  .related a { display: block; color: #B8A98A; text-decoration: none; margin-bottom: 10px; }
+  .related a:hover { text-decoration: underline; }
+  .cta { margin-top: 44px; padding: 26px; border-radius: 24px; background: rgba(184,169,138,0.06); border: 0.5px solid rgba(184,169,138,0.16); }
+  .cta h3 { font-family: 'Lora', serif; font-size: 28px; font-weight: 400; color: #F0EDE4; margin-bottom: 10px; }
+  .cta a { display: inline-block; margin-top: 12px; text-decoration: none; background: #B8A98A; color: #0A0A0B; padding: 12px 20px; border-radius: 999px; }
+  @media (max-width: 900px) {
+    nav { padding: 16px 20px; }
+    .nav-links a:not(.nav-cta) { display: none; }
+    .page { padding: 48px 20px 64px; }
+    h1 { font-size: 38px; }
+    h2 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">First <span>Principles</span></a>
+  <ul class="nav-links">
+    <li><a href="/about">How it works</a></li>
+    <li><a class="active" href="/guides/">Guides</a></li>
+    <li><a href="/pricing">Pricing</a></li>
+    <li><a href="/chat" class="nav-cta">Start thinking</a></li>
+  </ul>
+</nav>
+<main class="page">
+  <div class="breadcrumb"><a href="/guides/">Guides</a> / What is first principles thinking?</div>
+  <div class="eyebrow">Concept Guide</div>
+  <h1>What is first principles thinking?</h1>
+  <p class="lede">First principles thinking is the habit of stripping a problem down to what is actually true, then rebuilding your reasoning from there. In practice, it is less about sounding smart and more about stopping yourself from blindly inheriting other people’s assumptions.</p>
+  <div class="meta">Published April 17, 2026 · 7 minute read</div>
+
+  <p>Most people meet the phrase “first principles thinking” in quotes about innovation or famous founders. That makes it sound like a tool for brilliant contrarians. In reality, it is far more ordinary and more useful than that. It matters when you are making a career decision, doubting a relationship, rethinking a business move, or trying to understand whether your fear is based on facts or imagination.</p>
+  <p>The simplest version is this: instead of starting from “what do people usually do here?” you start from “what do I actually know to be true?” Once you do that, a surprising amount of fake certainty falls away.</p>
+
+  <h2>Why normal thinking often feels stuck</h2>
+  <p>When a decision is emotionally loaded, we tend to reason from conclusions we already half-believe. We say things like “I can’t leave yet,” “I should be grateful,” or “This is just how it works.” Those statements may feel practical, but they often mix together facts, social expectations, fear, and habit.</p>
+  <p>That is why hard choices can feel foggy even when you have spent days thinking about them. The problem is not always that you need more thoughts. The problem is that your thoughts are sitting on top of assumptions you have never inspected.</p>
+
+  <div class="callout">
+    <h3>A practical translation</h3>
+    <p>First principles thinking means separating three layers: what is true, what is assumed, and what is merely familiar.</p>
+  </div>
+
+  <h2>What first principles thinking is not</h2>
+  <p>It is not empty contrarianism. You do not reject common wisdom just to feel original. It is also not hyper-rational detachment where emotion is treated as a bug. Emotions still matter because they often point to what is at stake. The difference is that first principles thinking asks you to stop treating emotion as evidence.</p>
+  <p>It is also not a promise that one perfect answer exists. Sometimes the real outcome of good thinking is not certainty. It is cleaner uncertainty. That still matters, because clean uncertainty is much easier to act on than confusion.</p>
+
+  <h2>How to use it in a real decision</h2>
+  <p>Start by writing the conclusion you currently feel pulled toward. Then interrogate it.</p>
+  <ul>
+    <li>What facts do I actually know?</li>
+    <li>What am I assuming without checking?</li>
+    <li>Which parts of this belief come from fear, status pressure, or habit?</li>
+    <li>If I had to rebuild my view from scratch, what would I keep?</li>
+  </ul>
+  <p>For example, someone thinking “I can’t quit my job yet” might discover that the statement contains several different claims: I need more savings, I fear disappointing my family, I am worried my identity is tied to this role, and I do not trust myself to make a new plan. Those are not the same problem. Once separated, they can be handled differently.</p>
+
+  <h2>Why this method helps with clarity</h2>
+  <p>Clarity usually does not come from generating more options. It comes from reducing distortion. When you remove a bad assumption, a decision often becomes simpler without becoming easier. That is a meaningful difference. Simpler means you know what you are choosing between. Easier would mean the emotional cost disappears, and that is not always realistic.</p>
+  <p>This is also why first principles thinking works so well with guided questioning. Most people can see another person’s assumptions faster than their own. A structured conversation helps surface what you are unconsciously protecting.</p>
+
+  <h2>A good outcome to aim for</h2>
+  <p>After using first principles thinking, you should not necessarily feel triumphant. You should feel more honest. A good result sounds like this: “I now understand what is actually true, what I am afraid of, and what tradeoff I would be making.” That kind of clarity is often enough to move.</p>
+
+  <div class="cta">
+    <h3>Want to apply this to your own decision?</h3>
+    <p>A live First Principles session helps you separate facts, assumptions, and pressure step by step, instead of trying to do it all in your head.</p>
+    <a href="/chat">Start a session</a>
+  </div>
+
+  <section class="related">
+    <h3>Related guides</h3>
+    <a href="/guides/how-to-stop-overthinking-decisions/">How to stop overthinking decisions</a>
+    <a href="/guides/first-principles-vs-critical-thinking/">First principles vs critical thinking</a>
+    <a href="/guides/">Browse all guides</a>
+  </section>
+</main>
+</body>
+</html>

@@ -567,6 +567,97 @@
     font-style: italic;
     font-family: 'Lora', serif;
   }
+  .guides-strip {
+    padding: 72px 40px 84px;
+    border-top: 0.5px solid rgba(255,255,255,0.08);
+  }
+  .guides-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+  .guides-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #B8A98A;
+    margin-bottom: 16px;
+  }
+  .guides-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .guides-title {
+    font-family: 'Lora', serif;
+    font-size: 38px;
+    font-weight: 400;
+    color: #F0EDE4;
+    letter-spacing: -1px;
+    margin-bottom: 10px;
+  }
+  .guides-sub {
+    max-width: 640px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(232,230,223,0.52);
+  }
+  .guides-link {
+    color: #B8A98A;
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .guides-link:hover {
+    text-decoration: underline;
+  }
+  .guides-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .guide-card {
+    display: block;
+    padding: 22px 22px 24px;
+    border-radius: 22px;
+    text-decoration: none;
+    background: rgba(255,255,255,0.024);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+  .guide-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(184,169,138,0.26);
+    background: rgba(255,255,255,0.04);
+  }
+  .guide-card-tag {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(184,169,138,0.12);
+    color: #B8A98A;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    margin-bottom: 14px;
+  }
+  .guide-card-title {
+    font-family: 'Lora', serif;
+    font-size: 24px;
+    line-height: 1.25;
+    color: #F0EDE4;
+    margin-bottom: 12px;
+  }
+  .guide-card-copy {
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(232,230,223,0.56);
+    margin-bottom: 18px;
+  }
+  .guide-card-meta {
+    font-size: 12px;
+    color: rgba(232,230,223,0.34);
+  }
 
   /* Responsive */
   @media (max-width: 900px) {
@@ -582,6 +673,10 @@
     .hero-right { padding: 40px 24px; }
     .hero-stats { gap: 24px; }
     .hero-cases-grid { grid-template-columns: 1fr; }
+    .guides-strip { padding: 48px 20px 56px; }
+    .guides-header { flex-direction: column; align-items: flex-start; }
+    .guides-title { font-size: 30px; }
+    .guides-grid { grid-template-columns: 1fr; }
     nav { padding: 16px 20px; }
     .nav-links a:not(.nav-cta) { display: none; }
   }
@@ -594,6 +689,7 @@
   <div class="nav-right">
     <ul class="nav-links">
       <li><a href="/about">How it works</a></li>
+      <li><a href="/guides/">Guides</a></li>
       <li><a href="/pricing">Pricing</a></li>
       <li><a href="/chat" class="nav-cta">Start thinking</a></li>
     </ul>
@@ -657,7 +753,7 @@
     </p>
     <div class="hero-actions">
       <button class="btn-primary" onclick="startSession()">Start thinking</button>
-      <button class="btn-ghost" onclick="location.href='/about'">How it works</button>
+      <button class="btn-ghost" onclick="location.href='/guides/'">Read guides</button>
     </div>
     <div class="hero-cases">
       <div class="hero-cases-label">What People Bring Here</div>
@@ -738,6 +834,39 @@
     </div>
   </div>
 </div>
+
+<section class="guides-strip">
+  <div class="guides-shell">
+    <div class="guides-eyebrow">Decision Guides</div>
+    <div class="guides-header">
+      <div>
+        <h2 class="guides-title">Start with a problem people actually search for.</h2>
+        <p class="guides-sub">These short guides are built for people who are stuck in overthinking, trying to make a hard choice, or wanting a clearer decision framework before they start a live session.</p>
+      </div>
+      <a class="guides-link" href="/guides/">Browse all guides →</a>
+    </div>
+    <div class="guides-grid">
+      <a class="guide-card" href="/guides/what-is-first-principles-thinking/">
+        <span class="guide-card-tag">Concept</span>
+        <h3 class="guide-card-title">What is first principles thinking?</h3>
+        <p class="guide-card-copy">A practical explanation of first principles thinking, why it matters in real decisions, and how to use it without turning it into abstract philosophy.</p>
+        <div class="guide-card-meta">7 minute read</div>
+      </a>
+      <a class="guide-card" href="/guides/how-to-stop-overthinking-decisions/">
+        <span class="guide-card-tag">Overthinking</span>
+        <h3 class="guide-card-title">How to stop overthinking decisions</h3>
+        <p class="guide-card-copy">A grounded way to separate useful thinking from looping, so you can move from mental noise to an actual next step.</p>
+        <div class="guide-card-meta">8 minute read</div>
+      </a>
+      <a class="guide-card" href="/guides/first-principles-vs-critical-thinking/">
+        <span class="guide-card-tag">Comparison</span>
+        <h3 class="guide-card-title">First principles vs critical thinking</h3>
+        <p class="guide-card-copy">See what overlaps, what differs, and when each style of thinking is most useful in difficult decisions.</p>
+        <div class="guide-card-meta">6 minute read</div>
+      </a>
+    </div>
+  </div>
+</section>
 
 <!-- Supabase Auth -->
 <!-- Supabase SDK -->

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Guides — First Principles</title>
+<meta name="description" content="Explore practical guides on first principles thinking, overthinking, and decision making. Learn frameworks you can use before starting a live session.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://firstprinciples.site/guides/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="First Principles">
+<meta property="og:title" content="Decision Guides — First Principles">
+<meta property="og:description" content="Practical guides on first principles thinking, overthinking, and decision making.">
+<meta property="og:url" content="https://firstprinciples.site/guides/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Decision Guides — First Principles">
+<meta name="twitter:description" content="Practical guides on first principles thinking, overthinking, and decision making.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Decision Guides",
+  "url": "https://firstprinciples.site/guides/",
+  "description": "A collection of practical guides on first principles thinking, overthinking, and decision making.",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "First Principles",
+    "url": "https://firstprinciples.site/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #0A0A0B; color: #E8E6DF; min-height: 100vh; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 0.5px solid rgba(255,255,255,0.08); background: rgba(10,10,11,0.95); backdrop-filter: blur(12px); z-index: 100; height: 56px; }
+  .logo { font-family: 'Lora', serif; font-size: 18px; letter-spacing: -0.3px; color: #F0EDE4; text-decoration: none; flex-shrink: 0; }
+  .logo span { color: #B8A98A; font-style: italic; }
+  .nav-links { display: flex; gap: 32px; list-style: none; align-items: center; }
+  .nav-links a { text-decoration: none; color: rgba(232,230,223,0.5); font-size: 13px; transition: color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: #E8E6DF; }
+  .nav-cta { background: #B8A98A; color: #0A0A0B !important; padding: 8px 20px; border-radius: 20px; font-weight: 500; }
+  .page { max-width: 1080px; margin: 0 auto; padding: 72px 24px 96px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #B8A98A; margin-bottom: 18px; }
+  .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 28px; align-items: start; margin-bottom: 40px; }
+  .hero h1 { font-family: 'Lora', serif; font-size: 48px; line-height: 1.08; font-weight: 400; letter-spacing: -1.4px; color: #F0EDE4; margin-bottom: 18px; }
+  .hero p { font-size: 16px; line-height: 1.75; color: rgba(232,230,223,0.56); max-width: 700px; }
+  .hero-note { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 24px; }
+  .hero-note h2 { font-family: 'Lora', serif; font-size: 24px; font-weight: 400; color: #F0EDE4; margin-bottom: 12px; }
+  .hero-note p { font-size: 14px; line-height: 1.7; color: rgba(232,230,223,0.58); }
+  .hero-note ul { list-style: none; margin-top: 16px; display: grid; gap: 10px; }
+  .hero-note li { font-size: 13px; line-height: 1.6; color: rgba(232,230,223,0.58); padding-left: 16px; position: relative; }
+  .hero-note li::before { content: '•'; position: absolute; left: 0; color: #B8A98A; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .card { display: block; text-decoration: none; background: rgba(255,255,255,0.025); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 24px; transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease; }
+  .card:hover { transform: translateY(-3px); border-color: rgba(184,169,138,0.28); background: rgba(255,255,255,0.04); }
+  .tag { display: inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(184,169,138,0.12); color: #B8A98A; font-size: 11px; margin-bottom: 14px; }
+  .card h3 { font-family: 'Lora', serif; font-size: 26px; line-height: 1.22; font-weight: 400; color: #F0EDE4; margin-bottom: 12px; }
+  .card p { font-size: 14px; line-height: 1.75; color: rgba(232,230,223,0.56); margin-bottom: 18px; }
+  .meta { font-size: 12px; color: rgba(232,230,223,0.34); }
+  .section-title { font-family: 'Lora', serif; font-size: 30px; font-weight: 400; color: #F0EDE4; margin: 56px 0 20px; }
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .step { background: rgba(255,255,255,0.02); border: 0.5px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 22px; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(184,169,138,0.14); color: #B8A98A; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 12px; }
+  .step h3 { font-size: 15px; color: #F0EDE4; margin-bottom: 8px; }
+  .step p { font-size: 13px; line-height: 1.7; color: rgba(232,230,223,0.54); }
+  .cta { margin-top: 56px; padding: 28px; border-radius: 24px; background: rgba(184,169,138,0.06); border: 0.5px solid rgba(184,169,138,0.16); display: flex; justify-content: space-between; gap: 20px; align-items: center; }
+  .cta h3 { font-family: 'Lora', serif; font-size: 28px; font-weight: 400; color: #F0EDE4; margin-bottom: 8px; }
+  .cta p { font-size: 14px; line-height: 1.7; color: rgba(232,230,223,0.58); max-width: 620px; }
+  .cta a { text-decoration: none; background: #B8A98A; color: #0A0A0B; padding: 12px 22px; border-radius: 999px; font-size: 14px; white-space: nowrap; }
+  @media (max-width: 900px) {
+    nav { padding: 16px 20px; }
+    .nav-links a:not(.nav-cta) { display: none; }
+    .page { padding: 48px 20px 64px; }
+    .hero, .grid, .steps, .cta { grid-template-columns: 1fr; display: grid; }
+    .hero h1 { font-size: 36px; }
+    .cta { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">First <span>Principles</span></a>
+  <ul class="nav-links">
+    <li><a href="/about">How it works</a></li>
+    <li><a class="active" href="/guides/">Guides</a></li>
+    <li><a href="/pricing">Pricing</a></li>
+    <li><a href="/chat" class="nav-cta">Start thinking</a></li>
+  </ul>
+</nav>
+
+<main class="page">
+  <div class="eyebrow">Decision Guides</div>
+  <section class="hero">
+    <div>
+      <h1>Articles for people who need clarity before they need advice.</h1>
+      <p>These guides are written for the moment before a decision feels obvious. They are meant to help you think more clearly, not just feel briefly reassured. Each page is built around a real search question and ends with a practical next move.</p>
+    </div>
+    <aside class="hero-note">
+      <h2>What these guides are for</h2>
+      <p>If you are looping on a choice, confusing fear with facts, or trying to understand what a better thinking process looks like, start here.</p>
+      <ul>
+        <li>Short, structured reads instead of long theory.</li>
+        <li>Built around real decision pain points.</li>
+        <li>Designed to lead naturally into a live session if you want one.</li>
+      </ul>
+    </aside>
+  </section>
+
+  <section class="grid">
+    <a class="card" href="/guides/what-is-first-principles-thinking/">
+      <span class="tag">Concept</span>
+      <h3>What is first principles thinking?</h3>
+      <p>A plain-language introduction to first principles thinking, what it is really for, and how it helps when a decision feels emotionally loaded.</p>
+      <div class="meta">7 minute read</div>
+    </a>
+    <a class="card" href="/guides/how-to-stop-overthinking-decisions/">
+      <span class="tag">Overthinking</span>
+      <h3>How to stop overthinking decisions</h3>
+      <p>A practical way to notice when thinking has stopped being useful and started becoming a loop that drains clarity.</p>
+      <div class="meta">8 minute read</div>
+    </a>
+    <a class="card" href="/guides/first-principles-vs-critical-thinking/">
+      <span class="tag">Comparison</span>
+      <h3>First principles vs critical thinking</h3>
+      <p>A side-by-side explanation of how these two approaches overlap, where they differ, and when each one is more useful.</p>
+      <div class="meta">6 minute read</div>
+    </a>
+  </section>
+
+  <h2 class="section-title">How to use this library</h2>
+  <section class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Start with the question you are already asking</h3>
+      <p>Choose the guide that matches your real search intent instead of browsing randomly. That keeps the reading focused and more useful.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Borrow the framework, not just the conclusion</h3>
+      <p>The point is not to copy a takeaway from a page. The point is to notice the thinking structure and apply it to your own decision.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Move into a live session when the problem is personal</h3>
+      <p>Once the issue becomes specific to your situation, a guided session is usually more useful than reading one more article.</p>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div>
+      <h3>Want to work through your own decision?</h3>
+      <p>Use these guides to get oriented, then start a live First Principles session when you are ready to apply the process to your real situation.</p>
+    </div>
+    <a href="/chat">Start thinking</a>
+  </section>
+</main>
+</body>
+</html>

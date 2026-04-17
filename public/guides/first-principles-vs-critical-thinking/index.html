@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First Principles vs Critical Thinking — First Principles</title>
+<meta name="description" content="Understand the difference between first principles thinking and critical thinking, where they overlap, and when each one is most useful.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://firstprinciples.site/guides/first-principles-vs-critical-thinking/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="First Principles">
+<meta property="og:title" content="First Principles vs Critical Thinking — First Principles">
+<meta property="og:description" content="A practical comparison of first principles thinking and critical thinking for real decisions.">
+<meta property="og:url" content="https://firstprinciples.site/guides/first-principles-vs-critical-thinking/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="First Principles vs Critical Thinking — First Principles">
+<meta name="twitter:description" content="A practical comparison of first principles thinking and critical thinking for real decisions.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "First Principles vs Critical Thinking",
+  "description": "A practical comparison of first principles thinking and critical thinking for real decisions.",
+  "author": {
+    "@type": "Organization",
+    "name": "First Principles"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "First Principles"
+  },
+  "datePublished": "2026-04-17",
+  "dateModified": "2026-04-17",
+  "mainEntityOfPage": "https://firstprinciples.site/guides/first-principles-vs-critical-thinking/"
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #0A0A0B; color: #E8E6DF; min-height: 100vh; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 0.5px solid rgba(255,255,255,0.08); background: rgba(10,10,11,0.95); backdrop-filter: blur(12px); height: 56px; }
+  .logo { font-family: 'Lora', serif; font-size: 18px; letter-spacing: -0.3px; color: #F0EDE4; text-decoration: none; }
+  .logo span { color: #B8A98A; font-style: italic; }
+  .nav-links { display: flex; gap: 32px; list-style: none; align-items: center; }
+  .nav-links a { text-decoration: none; color: rgba(232,230,223,0.5); font-size: 13px; transition: color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: #E8E6DF; }
+  .nav-cta { background: #B8A98A; color: #0A0A0B !important; padding: 8px 20px; border-radius: 20px; font-weight: 500; }
+  .page { max-width: 760px; margin: 0 auto; padding: 64px 24px 88px; }
+  .breadcrumb { font-size: 12px; color: rgba(232,230,223,0.34); margin-bottom: 20px; }
+  .breadcrumb a { color: #B8A98A; text-decoration: none; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #B8A98A; margin-bottom: 18px; }
+  h1 { font-family: 'Lora', serif; font-size: 48px; line-height: 1.08; font-weight: 400; letter-spacing: -1.2px; color: #F0EDE4; margin-bottom: 18px; }
+  .lede { font-size: 18px; line-height: 1.8; color: rgba(232,230,223,0.62); margin-bottom: 28px; }
+  .meta { font-size: 12px; color: rgba(232,230,223,0.34); margin-bottom: 38px; }
+  h2 { font-family: 'Lora', serif; font-size: 30px; font-weight: 400; color: #F0EDE4; margin: 42px 0 16px; }
+  p { font-size: 15px; line-height: 1.85; color: rgba(232,230,223,0.58); margin-bottom: 16px; }
+  ul { margin: 10px 0 18px 20px; color: rgba(232,230,223,0.58); }
+  li { margin-bottom: 10px; line-height: 1.8; }
+  .table { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 26px 0; }
+  .cell { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 20px; }
+  .cell h3 { font-size: 16px; color: #F0EDE4; margin-bottom: 8px; }
+  .related { margin-top: 54px; padding-top: 28px; border-top: 0.5px solid rgba(255,255,255,0.08); }
+  .related h3 { font-family: 'Lora', serif; font-size: 24px; font-weight: 400; margin-bottom: 16px; }
+  .related a { display: block; color: #B8A98A; text-decoration: none; margin-bottom: 10px; }
+  .related a:hover { text-decoration: underline; }
+  .cta { margin-top: 44px; padding: 26px; border-radius: 24px; background: rgba(184,169,138,0.06); border: 0.5px solid rgba(184,169,138,0.16); }
+  .cta h3 { font-family: 'Lora', serif; font-size: 28px; font-weight: 400; color: #F0EDE4; margin-bottom: 10px; }
+  .cta a { display: inline-block; margin-top: 12px; text-decoration: none; background: #B8A98A; color: #0A0A0B; padding: 12px 20px; border-radius: 999px; }
+  @media (max-width: 900px) {
+    nav { padding: 16px 20px; }
+    .nav-links a:not(.nav-cta) { display: none; }
+    .page { padding: 48px 20px 64px; }
+    h1 { font-size: 38px; }
+    h2 { font-size: 28px; }
+    .table { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">First <span>Principles</span></a>
+  <ul class="nav-links">
+    <li><a href="/about">How it works</a></li>
+    <li><a class="active" href="/guides/">Guides</a></li>
+    <li><a href="/pricing">Pricing</a></li>
+    <li><a href="/chat" class="nav-cta">Start thinking</a></li>
+  </ul>
+</nav>
+<main class="page">
+  <div class="breadcrumb"><a href="/guides/">Guides</a> / First principles vs critical thinking</div>
+  <div class="eyebrow">Comparison Guide</div>
+  <h1>First principles vs critical thinking</h1>
+  <p class="lede">First principles thinking and critical thinking overlap, but they are not the same thing. Critical thinking helps you evaluate claims well. First principles thinking helps you rebuild a problem from the ground up when inherited assumptions are part of what is keeping you stuck.</p>
+  <div class="meta">Published April 17, 2026 · 6 minute read</div>
+
+  <p>People often use these terms as if they are interchangeable. That is understandable, because both involve questioning what you are told and trying to think more carefully. But when you are facing a hard decision, the difference matters.</p>
+  <p>Critical thinking is usually about judging information: Is this claim valid? Is the reasoning sound? What evidence supports it? First principles thinking goes one layer lower: What if the way I am framing the whole problem is built on assumptions I never chose?</p>
+
+  <h2>The easiest way to see the difference</h2>
+  <div class="table">
+    <div class="cell">
+      <h3>Critical thinking asks</h3>
+      <p>Is this argument coherent? Are the facts reliable? What evidence is missing? Where might bias or faulty logic be affecting the conclusion?</p>
+    </div>
+    <div class="cell">
+      <h3>First principles thinking asks</h3>
+      <p>What is actually true here? What assumptions have I inherited? If I started from scratch, would I still frame the problem the same way?</p>
+    </div>
+  </div>
+
+  <h2>Where critical thinking is strongest</h2>
+  <p>Critical thinking is excellent when the challenge is evaluating information quality. It is useful when reading an article, comparing advice, examining a pitch, or noticing weak logic in your own reasoning. It protects you from being too easily persuaded by confidence, popularity, or poorly supported claims.</p>
+  <p>It is especially valuable when the issue is external: a claim, an argument, a recommendation, a piece of data, or a public narrative.</p>
+
+  <h2>Where first principles thinking is strongest</h2>
+  <p>First principles thinking becomes especially useful when the problem is internal and tangled. It is powerful when your current reasoning feels sophisticated but somehow still stuck. That often happens in life decisions: career moves, relationships, identity questions, business choices, and moments of overthinking.</p>
+  <p>In those situations, you may not be lacking information. You may be trapped inside a frame you never questioned. First principles thinking helps you notice that the frame itself may be part of the problem.</p>
+
+  <h2>How they work together</h2>
+  <p>The best decision-making often uses both.</p>
+  <ul>
+    <li>Use critical thinking to evaluate evidence and arguments.</li>
+    <li>Use first principles thinking to examine the assumptions beneath the decision itself.</li>
+  </ul>
+  <p>For example, if you are deciding whether to leave a job, critical thinking helps you examine salary data, role expectations, and financial constraints. First principles thinking helps you question beliefs like “staying is automatically responsible” or “leaving means I failed.” One helps you test information. The other helps you test the frame.</p>
+
+  <h2>Which one do most people actually need?</h2>
+  <p>If someone is flooded with information and conflicting advice, they often need critical thinking first. If someone has plenty of information but still feels emotionally stuck, they often need first principles thinking more.</p>
+  <p>That is one reason guided questioning can be so useful. Many people are reasonably good at spotting bad arguments in other people’s ideas. They are much less skilled at spotting hidden assumptions in their own life decisions.</p>
+
+  <div class="cta">
+    <h3>Want to test your own assumptions, not just your opinions?</h3>
+    <p>A First Principles session helps you go beneath surface arguments and rebuild your thinking around what is actually true.</p>
+    <a href="/chat">Start a session</a>
+  </div>
+
+  <section class="related">
+    <h3>Related guides</h3>
+    <a href="/guides/what-is-first-principles-thinking/">What is first principles thinking?</a>
+    <a href="/guides/how-to-stop-overthinking-decisions/">How to stop overthinking decisions</a>
+    <a href="/guides/">Browse all guides</a>
+  </section>
+</main>
+</body>
+</html>
